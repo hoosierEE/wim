@@ -1,11 +1,13 @@
 /* wim -- modal text editor */
 'use strict';
 const c=document.getElementById('c').getContext('2d');
+
 const testwrite=(c)=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     c.font='20px monospace';
     c.fillText('hello canvas on a high dpi screen',20,30);
 };
+
 const rsz=(c)=>{
     let dpr=window.devicePixelRatio;
     const h=window.innerHeight, w=window.innerWidth;
