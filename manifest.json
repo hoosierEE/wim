@@ -1,0 +1,8 @@
+{
+    "app": {"background": {"scripts": ["background.js"]}},
+    "manifest_version": 2,
+    "name": "wim",
+    "version": "0.0.1",
+    "description": "a modal text editor",
+    "icons": { "16": "img/cred-16.png", "128": "img/cred-128.png" }
+}
