@@ -1,0 +1,23 @@
+* Wim
+Wim is a modal text editor Chrome app, similar to Vim, except:
+- built using web tech (HTML, JS, CSS)
+- kitchen sink versus "do one thing well"
+
+** Input
+Wim relies heavily on keyboard input and can be used without a mouse.  Supports most Vim commands and macros.
+
+*** TODO editing modes
+- normal
+- insert (emacs-like key chords work in this mode)
+- visual selction (normal, line-wise, block)
+
+*** TODO other modes
+- find-file
+- js-git API
+- scripting/UI
+
+** TODO Output
+Choose one:
+
+1. HTML5 canvas (as long as crisp text works and is fast enough)
+2. hidden textarea a'la CodeMirror, Ace, etc.
