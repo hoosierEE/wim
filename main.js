@@ -1,13 +1,19 @@
 /* wim -- modal text editor */
 'use strict';
-const c=document.getElementById('c').getContext('2d');
+const ctx=document.getElementById('c').getContext('2d');
 
 const testwrite=(c)=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
-    c.font='20px monospace';
+    c.font='16px monospace';
     c.fillText('hello canvas on a high dpi screen',20,30);
 };
 
+/* TODO keyboard input
+   - escape sequences: Ctrl+], 'fd' in rapid sequence, and <ESC>
+   - quit-anything: Ctrl+g
+   - motions aren't recorded
+   - edits are saved to a fixed-length queue for undo purposes
+*/
 const rsz=(c)=>{
     let dpr=window.devicePixelRatio;
     const h=window.innerHeight, w=window.innerWidth;
@@ -17,5 +23,5 @@ const rsz=(c)=>{
     testwrite(c);
 };
 
-window.addEventListener('resize',()=>{rsz(c);},false);
-window.addEventListener('DOMContentLoaded',()=>{rsz(c);},false);
+window.addEventListener('resize',()=>{rsz(ctx);});
+window.addEventListener('DOMContentLoaded',()=>{rsz(ctx);});
