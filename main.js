@@ -4,10 +4,8 @@
 const ctx=document.getElementById('c').getContext('2d');
 
 /* TODO keyboard input
-   - escape sequences: Ctrl+], 'fd' in rapid sequence, and <ESC>
-   - quit-anything: Ctrl+g
-   - motions aren't recorded
-   - edits are saved to a fixed-length queue for undo purposes
+   - inputs accumulate until they can be recognized as 'operations', then are pushed to history stack
+   - 'insert mode' inputs aren't saved
 */
 
 const testwrite=c=>{
@@ -25,13 +23,11 @@ const rsz=c=>{
     testwrite(c);
 };
 
-window.addEventListener('keydown',e=>{
-    const k=[1, e.key, e.timeStamp].concat('altKey ctrlKey metaKey shiftKey'.split(' ').map(x=>~~e[x]));
-    console.log(k)
-});
-window.addEventListener('keyup',e=>{
-    const k=[0, e.key, e.timeStamp].concat('altKey ctrlKey metaKey shiftKey'.split(' ').map(x=>~~e[x]));
-    console.log(k)
-});
+/* key_grab : Event -> Bool -> [Bool, String, Float, [Bool]]
+
+ */
+const key_grab=(x,y)=>[y,x.key,x.timeStamp,'altKey ctrlKey metaKey shiftKey'.split(' ').map(x=>~~x[x])];
+window.addEventListener('keydown',e=>console.log(key_grab(e,1)));
+window.addEventListener('keyup',e=>console.log(key_grab(e,0)));
 window.addEventListener('resize',()=>rsz(ctx));
 window.addEventListener('DOMContentLoaded',()=>rsz(ctx));
