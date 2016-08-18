@@ -1,3 +1,10 @@
 body,canvas,html{margin:0;padding:0;}
-body,html{background-color:#f4f0e0;height:100%;width:100%;}
-canvas{display:block;}
+/* body,html{height:100%;width:100%;} */
+canvas{
+    /* necessary */
+    display:block;
+
+    /* optional */
+    background-color:#f4f0e0; 
+    box-shadow:inset 0 0 10px #333;
+}
