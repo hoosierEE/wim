@@ -9,7 +9,6 @@ const zip=xs=>xs[0].map((_,y)=>xs.map(x=>x[y]));
 /* curry : ((x,y) -> z) -> (x -> y -> z) */
 const curry=(f,...x)=>f.length>x.length?(...y)=>curry(f,...x,...y):f(...x);
 
-
 const testwrite=c=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     c.font='16px monospace';
@@ -32,11 +31,11 @@ const key_transform=key_event=>[
     key_event.type=='keydown'|0,
     ['altKey','ctrlKey','metaKey','shiftKey']
         .map(y=>key_event[y]|0)
-        .reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0),
+        .reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0)
 ];
-/* check_keys : [s, u64, u1, u4] -> u1 */
-const check_keys=keys=>{
-};
+
+/* down_keys : [s, u64, u1, u4] -> u1 */
+const down_keys=keys=>keys.filter(x=>x[2]);
 
 let Keys=[];
 window.addEventListener('keydown',x=>Keys.push(key_transform(x)));
@@ -45,7 +44,7 @@ window.addEventListener('keyup',x=>Keys.push(key_transform(x)));
 const DEBUG=1;
 const resize_handler=c=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
-    [c.canvas.height,c.canvas.width]=[h,w].map(x=>(dpr?dpr:1)*x);
+    [c.canvas.height,c.canvas.width]=[h,w].map(x=>dpr*x);
     [c.canvas.style.height,c.canvas.style.width]=[h,w].map(x=>x+'px');
     c.scale(dpr,dpr);
     if(DEBUG){
