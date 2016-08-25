@@ -24,13 +24,20 @@ const key_filter=key_event=>({
         .map(y=>key_event[y]|0).reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0) /* 0-15 */
 });
 
-const DaKeys={};/* fields are assignable, object isn't */
+
+const DaKeys={};
 const key_handler=x=>{
-    const kf=key_filter(x);
+    const kf=key_filter(x),
+          preventable=ke=>{
+              let let_through={
+                  'KeyI':[2,4,10],
+                  'KeyR':[2,4],
+              }[ke.code];
+              return let_through?let_through.every(x=>ke.modifier!==x):true;
+          };
     DaKeys[kf.code]=kf;
     if(x.type==='keydown'){
-        /* call preventDefault() on everything but Chrome dev tools shortcut (Chrome OS and OSX) */
-        if(!(kf.code==='KeyI'&&kf.modifier===10||kf.modifier===5)){x.preventDefault()}
+        if(preventable(kf)){x.preventDefault()}
         console.table(DaKeys);
     }
 };
