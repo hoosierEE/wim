@@ -14,6 +14,17 @@ const do_render=c=>{
 
 /* Parsing commands */
 
+/* by_time : DaKeys -> {[DaKeys]} */
+const dk_sort=(dk,field)=>{
+    let keys=[];
+    for(let k in dk)keys.push(dk[k]);
+    return keys.sort((x,y)=>x[field]>y[field]);
+};
+const by_time=dk=>{
+    // zip DaKeys
+    return dk_sort(dk,'timestamp');
+};
+
 /* parse : DaKeys -> Action */
 const parse=o=>{};
 
@@ -26,7 +37,7 @@ const key_filter=key_event=>({
     timestamp:key_event.timeStamp|0,
     type:key_event.type==='keydown'|0,
     modifier:['altKey','ctrlKey','metaKey','shiftKey']
-        .map(y=>key_event[y]|0).reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0) /* 0-15 */
+        .map(y=>key_event[y]|0).reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0) /* rebase as 0-15 */
 });
 
 
