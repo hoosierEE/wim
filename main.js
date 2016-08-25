@@ -12,6 +12,11 @@ const do_render=c=>{
     c.fillText(lines,20,30);
 };
 
+/* Parsing commands */
+
+/* parse : DaKeys -> Action */
+const parse=o=>{};
+
 /* Events -- keyboard and mouse */
 
 /* key_filter : KeyboardEvent:o -> RawKey:o */
