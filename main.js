@@ -14,23 +14,16 @@ const do_render=c=>{
 
 /* Parsing commands */
 
-/* by_time : DaKeys -> {[DaKeys]} */
-const dk_sort=(dk,field)=>{
-    let keys=[];
-    for(let k in dk)keys.push(dk[k]);
-    return keys.sort((x,y)=>x[field]>y[field]);
-};
-const by_time=dk=>{
-    // zip DaKeys
-    return dk_sort(dk,'timestamp');
-};
+/* dk_sort : DaKeys -> [RawKey] */
+const dk_sort=(dk,field)=>Object.keys(dk).map(x=>dk[x]).sort((x,y)=>x[field]>y[field]);
+const by_time=dk=>dk_sort(dk,'timestamp');
 
 /* parse : DaKeys -> Action */
 const parse=o=>{};
 
 /* Events -- keyboard and mouse */
 
-/* key_filter : KeyboardEvent:o -> RawKey:o */
+/* key_filter : KeyboardEvent -> RawKey */
 const key_filter=key_event=>({
     key:key_event.key,
     code:key_event.code,
@@ -40,20 +33,16 @@ const key_filter=key_event=>({
         .map(y=>key_event[y]|0).reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0) /* rebase as 0-15 */
 });
 
-
-const DaKeys={};
+const DaKeys=[];
 const key_handler=x=>{
-    const kf=key_filter(x),
-          preventable=ke=>{
-              let let_through={
-                  'KeyI':[2,4,10],
-                  'KeyR':[2,4],
-              }[ke.code];
-              return let_through?let_through.every(x=>ke.modifier!==x):true;
-          };
+    const kf=key_filter(x);
     DaKeys[kf.code]=kf;
     if(x.type==='keydown'){
-        if(preventable(kf)){x.preventDefault()}
+        let let_thru={
+            'KeyI':[2,4,10],
+            'KeyR':[2,4],
+        }[kf.code];
+        let_thru?let_thru.every(x=>kf.modifier!==x):true && x.preventDefault();
         console.table(DaKeys);
     }
 };
