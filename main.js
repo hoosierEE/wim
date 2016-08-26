@@ -17,44 +17,38 @@ const do_render=c=>{
 
 /* dk_sort : DaKeys -> [RawKey]
    DaKeys sorted by 'field' */
-const dk_sort=(dk,field)=>{
-    let adk=[];
-    for(let k in dk){adk.push(dk[k])}
-    return adk.sort((x,y)=>{
-        if(x[field]>y[field]){return 1}
-        if(x[field]<y[field]){return -1}
-        return 0;
-    });
-};
+const dk_sort=(dk,field)=>to2d(dk).sort((x,y)=>{
+    if(x[dk[field]]>y[dk[field]]){return 1}
+    if(x[dk[field]]<y[dk[field]]){return -1}
+    return 0;
+});
 
 /* parse : DaKeys -> Action */
-const parse=o=>{};
+const parse=o=>{
+    let ot=dk_sort(o,'timestamp');
+};
 
 
 /* Events -- keyboard and mouse */
-
-/* key_filter : KeyboardEvent -> RawKey */
-const key_filter=key_event=>({
-    key:key_event.key,
-    code:key_event.code,
-    timestamp:key_event.timeStamp|0,
-    type:key_event.type==='keydown'|0,
-    modifier:['altKey','ctrlKey','metaKey','shiftKey']
-        .map(y=>key_event[y]|0)
-        .reduce((x,y,i,arr)=>x+y*Math.pow(2,arr.length-1-i),0) /* rebase as 0-15 */
-});
-
 const DaKeys={};/* customized KeyboardEvents */
 const key_handler=x=>{
-    const kf=key_filter(x);
-    DaKeys[kf.code]=kf;
-    if(x.type==='keydown'){
-        let let_thru={
+    const kf={/* key_filter : KeyboardEvent -> RawKey */
+        key:x.key,
+        code:x.code,
+        timestamp:x.timeStamp|0,
+        type:x.type==='keydown'|0,
+        mod:['altKey','ctrlKey','metaKey','shiftKey']
+            .map(y=>x[y]|0)
+            .reduce((a,b,i,arr)=>a+b*Math.pow(2,arr.length-1-i),0),
+    };
+    DaKeys[x.code]=kf;
+    if(kf.type==='keydown'){
+        let preventable={
             'KeyI':[5,10],
             'KeyR':[2,4],
         }[kf.code];
         /* call preventDefault() on everything EXCEPT the chords listed above. */
-        let_thru?let_thru.every(m=>kf.modifier!==m):true && x.preventDefault();
+        preventable?preventable.every(m=>kf.mod!==m):true && x.preventDefault();
     }
 };
 window.addEventListener('keydown',key_handler);
