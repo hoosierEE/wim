@@ -18,14 +18,15 @@ const do_render=c=>{
 /* dk_sort : DaKeys -> [RawKey]
    DaKeys sorted by 'field' */
 const dk_sort=(dk,field)=>to2d(dk).sort((x,y)=>{
+    console.log(to2d(dk));
     if(x[dk[field]]>y[dk[field]]){return 1}
     if(x[dk[field]]<y[dk[field]]){return -1}
     return 0;
 });
 
-/* parse : DaKeys -> Action */
-const parse=o=>{
-    let ot=dk_sort(o,'timestamp');
+/* update : AnyEvent -> Action */
+const update=now=>{
+    const ot=dk_sort(DaKeys,'timestamp');
 };
 
 
@@ -50,6 +51,7 @@ const key_handler=x=>{
         /* call preventDefault() on everything EXCEPT the chords listed above. */
         preventable?preventable.every(m=>kf.mod!==m):true && x.preventDefault();
     }
+    requestAnimationFrame(update);
 };
 window.addEventListener('keydown',key_handler);
 window.addEventListener('keyup',key_handler);
