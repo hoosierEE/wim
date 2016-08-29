@@ -1,6 +1,5 @@
 /* wim -- modal text editor */
 'use strict';
-
 /* Testing -- write a string to the canvas */
 const do_render=c=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
@@ -13,21 +12,10 @@ const do_render=c=>{
 };
 
 
-/* Parsing commands */
-
-
-/* dk_sort : DaKeys -> [RawKey]
-   DaKeys sorted by 'field' */
-const dk_sort=(dk,field)=>to2d(dk).sort((x,y)=>{
-    console.log(to2d(dk));
-    if(x[dk[field]]>y[dk[field]]){return 1}
-    if(x[dk[field]]<y[dk[field]]){return -1}
-    return 0;
-});
-
 /* update : AnyEvent -> Action */
-const update=now=>{
-    const ot=dk_sort(DaKeys,'timestamp');
+var glob=[];
+const update=perf_timestamp=>{
+    glob=sort_by('timestamp',DaKeys);
 };
 
 
@@ -45,12 +33,12 @@ const key_handler=x=>{
     };
     DaKeys[x.code]=kf;
     if(kf.type==='keydown'){
-        let preventable={
+        let p={
             'KeyI':[5,10],
             'KeyR':[2,4],
         }[kf.code];
         /* call preventDefault() on everything EXCEPT the chords listed above. */
-        preventable?preventable.every(m=>kf.mod!==m):true && x.preventDefault();
+        p?p.every(m=>kf.mod!==m):true && x.preventDefault();
     }
     requestAnimationFrame(update);
 };
@@ -61,7 +49,6 @@ window.addEventListener('keyup',key_handler);
 /* Window -- load, resize */
 const pix_ratio_fix=c=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
-    c.canvas.height=c.canvas.height;
     [c.canvas.height,c.canvas.width]=[h,w].map(x=>dpr*x);
     [c.canvas.style.height,c.canvas.style.width]=[h,w].map(x=>x+'px');
     c.font='16px monospace';/* has to be set after modifying c.canvas.anything */
