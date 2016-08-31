@@ -26,7 +26,10 @@ const flatten=o=>{
 const flat2=o=>{
     let oa=Object.keys(o).reduce((x,y)=>{x.push(o[y]);return x;},[]),
         ok=Object.keys(oa[0]);
-    console.log([oa,ok]);
+    let ii=ok.reduce((x,y,i,a)=>{
+
+    },[[ok]]);
+    return ii;
 };
 /* sort_by : 'key' -> DaKeys -> [RawKey]
    DaKeys sorted by 'key' */
