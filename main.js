@@ -1,7 +1,8 @@
 /* wim -- modal text editor */
 'use strict';
+
 /* Testing -- write a string to the canvas */
-const do_render=c=>{
+const render=c=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     const lines=[
         'TODO keyboard input',
@@ -12,10 +13,40 @@ const do_render=c=>{
 };
 
 
+/* flatten : {k1:{v1,v2,vN},k2:{v1,v2,vN}} -> [[v1],[v2],[vN]]
+   object -> 2d array with 'column' names */
+const flatten=o=>{
+    let oo=Object.keys(o);
+    if(oo.length<1){return null;}
+    let oa=[Object.keys(o[oo[0]])];/* headers */
+    for(let i in o){let ia=[]; for(let j in o[i]){ia.push(o[i][j]);} oa.push(ia);}
+    return oa;
+};
+
+const flat2=o=>{
+    let oa=Object.keys(o).reduce((x,y)=>{x.push(o[y]);return x;},[]),
+        ok=Object.keys(oa[0]);
+    console.log([oa,ok]);
+};
+/* sort_by : 'key' -> DaKeys -> [RawKey]
+   DaKeys sorted by 'key' */
+const sort_by=(str,dk)=>{
+    let d=flatten(dk), key=d[0].indexOf(str);
+    return d.slice(1).sort((x,y)=>(x[key]>y[key])?1:(x[key]<y[key])?-1:0);
+};
+
+/* combo : 'str' -> DaKeys -> ms -> Bool
+   Returns true if DaKeys contains the keystrokes 'str'.
+   A positive delta means the keystrokes can't have more than `ms` milliseconds between them. */
+const combo=(str,dk,delta=null)=>{
+    console.log(delta);
+};
+
 /* update : AnyEvent -> Action */
-let glob=[];
 const update=perf_timestamp=>{
-    glob=sort_by('timestamp',DaKeys);
+    /* what kind of keyboard input did we get? */
+    const keystrokes=sort_by('timestamp',DaKeys);
+    console.table(keystrokes);
 };
 
 
@@ -59,5 +90,5 @@ const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 window.addEventListener('resize',()=>pixel_ratio_fix(ctx,canvas));
 window.addEventListener('load',()=>{
     pixel_ratio_fix(ctx,canvas);
-    do_render(ctx); // testing
+    render(ctx);// testing
 });
