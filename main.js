@@ -1,6 +1,5 @@
 /* wim -- modal text editor */
 'use strict';
-
 /* Testing -- write a string to the canvas */
 const render=c=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
@@ -12,46 +11,42 @@ const render=c=>{
     c.fillText(lines,20,30);
 };
 
-
-/* flatten : {k1:{v1,v2,vN},k2:{v1,v2,vN}} -> [[v1],[v2],[vN]]
-   object -> 2d array with 'column' names */
-const flatten=o=>{
-    let oo=Object.keys(o);
-    if(oo.length<1){return null;}
-    let oa=[Object.keys(o[oo[0]])];/* headers */
-    for(let i in o){let ia=[]; for(let j in o[i]){ia.push(o[i][j]);} oa.push(ia);}
-    return oa;
+/* invert : DaKeys -> InvertedKeys
+   Object-of-Objects into 2d array where rows are instances and columns are fields */
+const invert=o=>{
+    let oa=Object.keys(o).reduce((x,y)=>{x.push(o[y]);return x;},[]);
+    return Object.keys(oa[0]).map(w=>oa.reduce((x,y)=>{x.push(y[w]);return x;},[w]));
 };
 
-const flat2=o=>{
-    let oa=Object.keys(o).reduce((x,y)=>{x.push(o[y]);return x;},[]),
-        ok=Object.keys(oa[0]);
-    let ii=ok.reduce((x,y,i,a)=>{
-
-    },[[ok]]);
-    return ii;
-};
-/* sort_by : 'key' -> DaKeys -> [RawKey]
-   DaKeys sorted by 'key' */
-const sort_by=(str,dk)=>{
-    let d=flatten(dk), key=d[0].indexOf(str);
-    return d.slice(1).sort((x,y)=>(x[key]>y[key])?1:(x[key]<y[key])?-1:0);
+/* sort_by : String -> InvertedKeys -> SortedInvertedKeys
+   1. invert DaKeys
+   2. get column index from string
+   3. strip column name and sort by column number
+   4. restore column names */
+const sort_by=(str,ik)=>{
+    let d=zip(ik), key=d[0].indexOf(str);
+    return [d[0]].concat(d.slice(1).sort((x,y)=>(x[key]>y[key])?1:(x[key]<y[key])?-1:0));
 };
 
-/* combo : 'str' -> DaKeys -> ms -> Bool
-   Returns true if DaKeys contains the keystrokes 'str'.
-   A positive delta means the keystrokes can't have more than `ms` milliseconds between them. */
-const combo=(str,dk,delta=null)=>{
-    console.log(delta);
+/* combo : String -> SortedInvertedKeys -> MilliSeconds -> Bool
+   str is suffix of FlatSortedKeys with less than timeout ms between each of str? */
+const combo=(str,sik,timeout=Infinity)=>{
+    let suffix=zip(sik.slice(-(str.length)));
+    if(suffix[0].join('')===str){
+        let idx=sik[0].indexOf('timestamp'),
+            ss=suffix[idx];
+        TODO
+    }
+    return false;
 };
 
 /* update : AnyEvent -> Action */
 const update=perf_timestamp=>{
-    /* what kind of keyboard input did we get? */
-    const keystrokes=sort_by('timestamp',DaKeys);
-    console.table(keystrokes);
+    /* what kind of keyboard input did we just get? */
+    let ks=invert(DaKeys);
+    const keystrokes=sort_by('timestamp',ks);
+    (combo('fds',keystrokes,500));
 };
-
 
 /* Events -- keyboard and mouse */
 const DaKeys={};/* customized KeyboardEvents */
@@ -65,20 +60,20 @@ const key_handler=x=>{
             .map(y=>x[y]|0)
             .reduce((a,b,i,arr)=>a+b*Math.pow(2,arr.length-1-i),0)
     };
-    DaKeys[x.code]=kf;
-    if(kf.type==='keydown'){
-        let allow_default={
-            'KeyI':[5,10],
-            'KeyR':[2,4],
+    DaKeys[kf.code]=kf;
+    if(kf.type){
+        let ok_default={
+            'KeyI':[5,10],/* [Cmd Opt i] [Ctrl i] */
+            'KeyR':[2,4],/* [Cmd r] [Ctrl r] */
+            /* optionally whitelist more keyboard shortcuts here */
         }[kf.code];
         /* call preventDefault() on everything EXCEPT the chords listed above. */
-        allow_default?allow_default.every(m=>kf.mod!==m):true && x.preventDefault();
+        ok_default?ok_default.every(m=>kf.mod!==m):true && x.preventDefault();
+        requestAnimationFrame(update);
     }
-    requestAnimationFrame(update);
 };
 window.addEventListener('keydown',key_handler);
 window.addEventListener('keyup',key_handler);
-
 
 /* Window -- load, resize */
 const pixel_ratio_fix=(c,cc)=>{
