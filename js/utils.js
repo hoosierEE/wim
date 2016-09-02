@@ -1,4 +1,5 @@
 /* Utils */
+'use strict';
 
 /* zip : [(x,y)] -> ([x],[y]) */
 const zip=xs=>xs[0].map((_,y)=>xs.map(x=>x[y]));

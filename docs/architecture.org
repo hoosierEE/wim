@@ -5,7 +5,7 @@ For example, say you create a keyboard shortcut =Ctrl a b= where 3 keys are held
 But you might also want a sequence =a b= in which first a is pressed, then b.
 A fast touch-typist may not fully release one key before pressing another, so Wim might register that both the =Ctrl a b= chord and the =a b= sequence have occurred.
 
-Wim can do one of:
+Wim must do one of:
 1. prioritize based on an implicit global rule (e.g. evaluate chords before sequences)
 2. prioritize based on a user-defined setting
 3. disallow conflicts (e.g. throw an exception if user tries to load a config with conflicts)
@@ -14,7 +14,7 @@ Wim can do one of:
 Wim currently uses an implicit global rule because it's the simplest to implement.
 
 ** =KeyboardEvent.code=
-Codes which map to physical keyboard buttons.  "KeyA" does not distinguish between upper- and lower-case =A=.
+These codes map to physical keyboard buttons.  "KeyA" does not distinguish between upper- and lower-case =A=.
 
 ** =KeyboardEvent.key=
 This can be a single-letter string such as "A" or a string representing the name of the key such as "Escape".  MacOS allows users to enter combining characters, such as accented vowels, but as far as Chrome's KeyboardEvent interface is concerned, these are all "Dead" keys.  If we want to accept characters beyond the default set we have to handle them ourselves.
@@ -26,40 +26,26 @@ Milliseconds since program started.  Truncated to int.
 1 for "keydown", 0 for "keyup"
 
 ** Modifier keys
-=KeyboardEvent='s modifier key properties ("altKey", "ctrlKey", "metaKey", and "shiftKey") get turned into a 4-bit integer, then rebased into a number from 0 to 15.  All combinations of modifier keys can be represented by a single number:
+Wim converts =KeyboardEvent= modifier key properties ("altKey", "ctrlKey", "metaKey", and "shiftKey") into a 4-bit integer (number from 0 to 15).  Any combination of modifier keys can be represented as a single number:
 
-| value | alt | ctrl | meta | shfit |
-|-------+-----+------+------+-------|
-|     0 |   0 |    0 |    0 |     0 |
-|     1 |   0 |    0 |    0 |     1 |
-|     2 |   0 |    0 |    1 |     0 |
-|     3 |   0 |    0 |    1 |     1 |
-|     4 |   0 |    1 |    0 |     0 |
-|     5 |   0 |    1 |    0 |     1 |
-|     6 |   0 |    1 |    1 |     0 |
-|     7 |   0 |    1 |    1 |     1 |
-|     8 |   1 |    0 |    0 |     0 |
-|     9 |   1 |    0 |    0 |     1 |
-|    10 |   1 |    0 |    1 |     0 |
-|    11 |   1 |    0 |    1 |     1 |
-|    12 |   1 |    1 |    0 |     0 |
-|    13 |   1 |    1 |    0 |     1 |
-|    14 |   1 |    1 |    1 |     0 |
-|    15 |   1 |    1 |    1 |     1 |
-
-Here are some shorthand type names:
-
-=u1= : unsigned 1-bit int (possible values: 0, 1)
-=u4= : unsigned 4-bit int (possible values: 0 through 15)
-=s= : UTF-16 string
-=u= : JS unsigned integer (JS Number without the floating point portion)
-=(t1,t2)= : tuple (JS array) containing type1, type2
-
-Wim turns KeyboardEvents into =RawKey= objects, and pushes them to an array of the same.
-
-=RawKey= : =(s, u, u1, u4)=
-
-=RawKeys= : =[RawKey]=
+| =alt= / =option= | =ctrl= | =meta= / =command= | =shfit= | =value= |
+|------------------+--------+--------------------+---------+---------|
+|                0 |      0 |                  0 |       0 |       0 |
+|                0 |      0 |                  0 |       1 |       1 |
+|                0 |      0 |                  1 |       0 |       2 |
+|                0 |      0 |                  1 |       1 |       3 |
+|                0 |      1 |                  0 |       0 |       4 |
+|                0 |      1 |                  0 |       1 |       5 |
+|                0 |      1 |                  1 |       0 |       6 |
+|                0 |      1 |                  1 |       1 |       7 |
+|                1 |      0 |                  0 |       0 |       8 |
+|                1 |      0 |                  0 |       1 |       9 |
+|                1 |      0 |                  1 |       0 |      10 |
+|                1 |      0 |                  1 |       1 |      11 |
+|                1 |      1 |                  0 |       0 |      12 |
+|                1 |      1 |                  0 |       1 |      13 |
+|                1 |      1 |                  1 |       0 |      14 |
+|                1 |      1 |                  1 |       1 |      15 |
 
 ** When =RawKeys= contains something interesting, do something
 Within normal mode, the user may:
@@ -75,22 +61,3 @@ Within insert mode, the user may:
 2. remove characters
 3. want to leave insert mode (e.g. "Escape" key)
 4. move caret with arrow keys
-
-* Things trimmed from the implementation
-Removed this conditional blacklisting of keychords, in favor of unconditional =preventDefault= for all keys.
-
-#+BEGIN_SRC javascript
-// inside keydown event handler (x=>...
-const preventable=[/* preventDefault() for the following chords */
-    ['d',4],/* Ctrl d */
-    ['e',4],/* Ctrl e */
-    ['k',4],/* Ctrl k */
-    ['l',2],/* Meta l */
-    ['l',4],/* Ctrl l */
-    ['p',4],/* Ctrl p */
-    ['Escape',null],/* Escape */
-].find(i=>i[0]===kt[0]&&(i[1]===kt[3]||!i[1]));
-if(preventable){console.log('prevented a default');x.preventDefault();}
-#+END_SRC
-
-There are still some chords that we can't prevent, such as =Ctrl W=.  Just have to live with it.
