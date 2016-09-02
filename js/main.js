@@ -18,10 +18,8 @@ const update=perf_timestamp=>{
 };
 
 /* Events -- keyboard and mouse */
-
 const KP=new Set();/* Keys Pressed */
 const KQ=[[],[],[],[],[]];/* KeyDown Queue -- arrays of key, code, timestamp, mod */
-
 const key_handler=x=>{
     const fk={/* filtered KeyboardEvents */
         key:x.key,
@@ -32,6 +30,7 @@ const key_handler=x=>{
             .map(y=>x[y]|0)
             .reduce((a,b,i,arr)=>a+b*Math.pow(2,arr.length-1-i),0)
     };
+    /* update KP here so requestAnimationFrame always deals with the same facts */
     fk.down&&KP.add(fk.code)||KP.delete(fk.code);
     if(fk.down){
         /* Call preventDefault() on everything EXCEPT the chords listed below.
