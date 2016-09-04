@@ -1,5 +1,5 @@
 * Keyboard Input
-Wim is keyboard-centric and needs to handle both key /sequences/ and key /chords/.
+Wim is keyboard-centric and has to handle both key /sequences/ and key /chords/.
 This can get quite complex if you let it.
 For example, say you create a keyboard shortcut =Ctrl a b= where 3 keys are held simultaneously.
 But you might also want a sequence =a b= in which first a is pressed, then b.
@@ -13,20 +13,29 @@ Wim must do one of:
 
 Wim currently uses an implicit global rule because it's the simplest to implement.
 
+Wim also permits cancellation of an in-progress or multi-part command.  This "cancel anything" command is bound to =Ctrl g= by default.
+
+Key sequences are stored in a FIFO array, and chords are stored in a Set.
+
 ** =KeyboardEvent.code=
-These codes map to physical keyboard buttons.  "KeyA" does not distinguish between upper- and lower-case =A=.
+These codes map to physical keyboard buttons.
+"KeyA" does not distinguish between upper- and lower-case =A=.
 
 ** =KeyboardEvent.key=
-This can be a single-letter string such as "A" or a string representing the name of the key such as "Escape".  MacOS allows users to enter combining characters, such as accented vowels, but as far as Chrome's KeyboardEvent interface is concerned, these are all "Dead" keys.  If we want to accept characters beyond the default set we have to handle them ourselves.
+This can be a single-letter string such as "A" or a string representing the name of the key such as "Escape".
+MacOS allows users to enter combining characters, such as accented vowels, but as far as Chrome's KeyboardEvent interface is concerned, these are all "Dead" keys.
+If we want to accept characters beyond the default set we have to handle them ourselves.
 
 ** =KeyboardEvent.timestamp=
-Milliseconds since program started.  Truncated to int.
+Milliseconds since program started.
+Truncated to int.
 
 ** =KeyboardEvent.type=
 1 for "keydown", 0 for "keyup"
 
 ** Modifier keys
-Wim converts =KeyboardEvent= modifier key properties ("altKey", "ctrlKey", "metaKey", and "shiftKey") into a 4-bit integer (number from 0 to 15).  Any combination of modifier keys can be represented as a single number:
+Wim converts =KeyboardEvent= modifier key properties ("altKey", "ctrlKey", "metaKey", and "shiftKey") into a 4-bit integer (number from 0 to 15).
+Any combination of modifier keys can be represented as a single number:
 
 | =alt= / =option= | =ctrl= | =meta= / =command= | =shfit= | =value= |
 |------------------+--------+--------------------+---------+---------|
