@@ -1,40 +1,34 @@
-<p align="center"><img src="images/wim-128.png" /></p>
+<p align="center">![](images/wim-128.png)</p>
 
-Wim is a modal text editor Chrome app, similar to Vim, except:
-
-- sandboxed JS versus native C
+Wim is a modal text editor and Chrome app, similar to Vim, except:
+- sandboxed JS,HTML,CSS versus native C
 - kitchen sink versus "do one thing well"
 
-Wim is a re-write of, and successor to [cred](Https://github.com/hoosierEE/cred).
+Wim is a re-write of, and successor to [cred](https://github.com/hoosierEE/cred).
 
 # Input
-Wim relies heavily on keyboard input and can be used without a mouse.
-Supports most Vim commands and macros.
-Vim-style commands work in Normal mode.
-Emacs-style commands work while in Insert mode.
-Thus Vim behavior can be removed by:
-
-- start editor in Insert mode
-- disable "escape to Normal mode" commands
+In terms of user interface, Wim is inspired by Vim and Spacemacs.
+However, it has some limitations due to not being a native application.
 
 ## editing modes
-- normal
-- insert (emacs-like key chords work in this mode)
-- visual selction (normal, line-wise, block)
+Wim shares Vim's Normal, Insert and Visual modes, as well as Spacemacs' multiple cursors.
+Rather than define the keyboard interface (Vim or Emacs style) at config time, Wim defaults to Emacs style while in Insert mode, and Vim style otherwise.
 
 ## other modes
 - shared clipboard
 - find-file
-- js-git API
+- js-git integration
 - scripting/UI
 
 # Display
-When Wim is running at least 1 buffer is open and visible.
-There can be multiple buffers, and each one occupies an HTML5 canvas element.
+Wim renders text onto HTML5 canvas, with 1 canvas element per "buffer".
+Wim buffers/canvases correspond to Emacs "windows".
+Each buffer runs 1 major mode and possibly many minor modes, similar to Emacs.
 
 # Todos
 - input
-- display
-- file I/O
-- filetype-specific 'major' modes
-- 'minor' modes
+- multiple buffers/window management
+- file i/o
+- major modes
+- minor modes
+- API so other people can write their own modes
