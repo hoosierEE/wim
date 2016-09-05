@@ -11,18 +11,19 @@ const render=c=>{
 };
 
 /* update : AnyEvent -> Action */
-const update=(perf_now,iks,ikc)=>{
+const update=(perf_now,input)=>{
     /* what kind of keyboard input did we just get? */
-    console.table(zip(iks).slice(-10));// end of sequence
-    console.log(Array.from(ikc));// chords
+    console.table(zip(input.KS).slice(-10));// end of sequence
+    console.log(Array.from(input.KC));// chords
 };
 
 /* Events -- keyboard and mouse */
 const INPUT={
     KC:new Set(), /* Key Chord */
     KS:[[],[],[],[],[]],/* Key Sequence */
-    KST:'key code timestamp down mod'.split(' '), /* Key Sequence types */
+    KST:['key','code','timestamp','down','mod'],/* Key Sequence types */
 };
+
 const key_handler=x=>{
     const rk={/* 'reduced' KeyboardEvents */
         key:x.key, code:x.code, timestamp:x.timeStamp|0, down:x.type==='keydown'|0,
@@ -41,10 +42,9 @@ const key_handler=x=>{
             /* optionally whitelist more keyboard shortcuts here */
         }[rk.code];
         (ok_chords?ok_chords.every(m=>rk.mod!==m):true) && x.preventDefault();
-
         /* push each field to their respective fields in KS array */
         INPUT.KST.forEach(x=>INPUT.KS[INPUT.KST.indexOf(x)].push(rk[x]));
-        requestAnimationFrame((t)=>update(t,INPUT.KS,INPUT.KC));
+        requestAnimationFrame((t)=>update(t,INPUT));
     }
 };
 window.addEventListener('keydown',key_handler);

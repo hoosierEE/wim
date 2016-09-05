@@ -13,9 +13,15 @@ Wim must do one of:
 
 Wim currently uses an implicit global rule because it's the simplest to implement.
 
-Wim also permits cancellation of an in-progress or multi-part command.  This "cancel anything" command is bound to =Ctrl g= by default.
+Wim also permits cancellation of an in-progress or multi-part command.
+This "cancel anything" command is bound to =Ctrl g= by default.
 
-Key sequences are stored in a FIFO array, and chords are stored in a Set.
+Key sequences are =push=ed to an array; chords reside in a Set.
+
+** Keyboard Commands
+When in normal mode, Wim parses keyboard input [[https://en.wikipedia.org/wiki/Eager_evaluation][eagerly]], attempting to match keystrokes with predefined commands.
+When it finds a match, it executes that command.
+Otherwise it displays an error message indicating which command failed to match.
 
 ** =KeyboardEvent.code=
 These codes map to physical keyboard buttons.
