@@ -1,4 +1,4 @@
-<img align="center" src="images/wim-128.png" />
+<p align="center"><img scr="images/wim-128.png" /></p>
 
 Wim is a modal text editor Chrome app, similar to Vim, except:
 
