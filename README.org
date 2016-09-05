@@ -1,6 +1,6 @@
-* Wim
-#+ATTR_HTML align="center"
+#+begin_center
 [[/images/wim-128.png]]
+#+end_center
 
 Wim is a modal text editor Chrome app, similar to Vim, except:
 - sandboxed JS versus native C
