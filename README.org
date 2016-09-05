@@ -1,5 +1,5 @@
-#+ATTR_HTML: width="100%" align="middle"
-[[./images/wim-128.png]]
+#+ATTR_HTML: width="900"
+[[/images/wim-128.png]]
 
 Wim is a modal text editor Chrome app, similar to Vim, except:
 - sandboxed JS versus native C
