@@ -1,4 +1,4 @@
-<p align="center">![](images/wim-128.png)</p>
+<p align="center"><img src="images/wim-128.png" /></p>
 
 Wim is a modal text editor and Chrome app, similar to Vim, except:
 - sandboxed JS,HTML,CSS versus native C
