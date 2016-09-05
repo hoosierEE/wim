@@ -5,7 +5,7 @@ Wim is a modal text editor Chrome app, similar to Vim, except:
 - sandboxed JS versus native C
 - kitchen sink versus "do one thing well"
 
-Wim is a re-write of, and successor to [[Https://github.com/hoosierEE/cred][cred]].
+Wim is a re-write of, and successor to [cred](Https://github.com/hoosierEE/cred).
 
 # Input
 Wim relies heavily on keyboard input and can be used without a mouse.
