@@ -21,29 +21,31 @@ const update=(perf_now,input)=>{
 const INPUT={
     KC:new Set(), /* Key Chord */
     KS:[[],[],[],[],[]],/* Key Sequence */
-    KST:['key','code','timestamp','down','mod'],/* Key Sequence types */
 };
 
 const key_handler=x=>{
     const rk={/* 'reduced' KeyboardEvents */
-        key:x.key, code:x.code, timestamp:x.timeStamp|0, down:x.type==='keydown'|0,
+        key:x.key,
+        code:x.code,
+        timestamp:x.timeStamp|0,
+        down:x.type==='keydown'|0,
         mod:['altKey','ctrlKey','metaKey','shiftKey']
             .map(y=>x[y]|0)
-            .reduce((a,b,i,arr)=>a+b*Math.pow(2,arr.length-1-i),0),
-    };
+            .reduce((a,b,i,arr)=>a+b*2**(arr.length-1-i),0)};
     /* update KC here so requestAnimationFrame always deals with the same facts */
     rk.down&&INPUT.KC.add(rk.code)||INPUT.KC.delete(rk.code);
     if(rk.down){
-        /* Call preventDefault() on everything EXCEPT the chords listed below.
+        /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
            NOTE: These chords can only be 1 non-mod key, plus 1 or more mod keys. */
         let ok_chords={
             'KeyI':[5,10],
             'KeyR':[2,4],
-            /* optionally whitelist more keyboard shortcuts here */
+            /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
         (ok_chords?ok_chords.every(m=>rk.mod!==m):true) && x.preventDefault();
-        /* push each field to their respective fields in KS array */
-        INPUT.KST.forEach(x=>INPUT.KS[INPUT.KST.indexOf(x)].push(rk[x]));
+
+        /* 2. Push each field to their respective fields in KS array. */
+        Object.keys(rk).forEach((x,i)=>INPUT.KS[i].push(rk[x]));
         requestAnimationFrame((t)=>update(t,INPUT));
     }
 };
