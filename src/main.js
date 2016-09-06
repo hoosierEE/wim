@@ -15,42 +15,53 @@ const update=(perf_now,input)=>{
     /* what kind of keyboard input did we just get? */
     console.table(zip(input.KS).slice(-10));// end of sequence
     console.log(Array.from(input.KC));// chords
+    // TODO: function tree
+};
+
+const NORM_CMD={/* commands */
+    verb:'cdy',
+    mult0:'123456789',
+    multN:'0123456789',
+    modifier:'ai',
+    text_obj:'eEbBps"\'<>`{}[]()$0',
+    motion:'hjklbBwWeE0^${}fFtTG',
+    goto_insert:'aAiIoO',
+    goto_visual:'vV',
 };
 
 /* Events -- keyboard and mouse */
-const INPUT={
-    KC:new Set(), /* Key Chord */
-    KS:[[],[],[],[],[]],/* Key Sequence */
+const IN={
+    KC:new Set(),/* Key Chord */
+    KS:[[],[],[],[]],/* Key Sequence */
 };
 
-const key_handler=x=>{
+const key_handler=(x,down,input,updatefn)=>{
     const rk={/* 'reduced' KeyboardEvents */
         key:x.key,
         code:x.code,
         timestamp:x.timeStamp|0,
-        down:x.type==='keydown'|0,
-        mod:['altKey','ctrlKey','metaKey','shiftKey']
+        mod:[[altKey],'ctrlKey','metaKey','shiftKey']
             .map(y=>x[y]|0)
-            .reduce((a,b,i,arr)=>a+b*2**(arr.length-1-i),0)};
+            .reduce((a,b,i,arr)=>a+b*2**(arr.length-1-i),0)
+    };
     /* update KC here so requestAnimationFrame always deals with the same facts */
-    rk.down&&INPUT.KC.add(rk.code)||INPUT.KC.delete(rk.code);
-    if(rk.down){
+    input.KC[down?'add':'delete'](rk.code);
+    if(down){
         /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
-           NOTE: These chords can only be 1 non-mod key, plus 1 or more mod keys. */
+           ok_chords are: 1 non-mod key, plus 1 or more mod keys. */
         let ok_chords={
             'KeyI':[5,10],
             'KeyR':[2,4],
             /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
         (ok_chords?ok_chords.every(m=>rk.mod!==m):true) && x.preventDefault();
-
         /* 2. Push each field to their respective fields in KS array. */
-        Object.keys(rk).forEach((x,i)=>INPUT.KS[i].push(rk[x]));
-        requestAnimationFrame((t)=>update(t,INPUT));
+        Object.keys(rk).forEach((x,i)=>input.KS[i].push(rk[x]));
+        requestAnimationFrame((t)=>updatefn(t,IN));
     }
 };
-window.addEventListener('keydown',key_handler);
-window.addEventListener('keyup',key_handler);
+window.addEventListener('keydown',event=>key_handler(event,1,IN,update));
+window.addEventListener('keyup',event=>key_handler(event,0,IN,update));
 
 /* Window -- load, resize */
 const pixel_ratio_fix=(c,cc)=>{
@@ -67,4 +78,4 @@ window.addEventListener('load',()=>{
     pixel_ratio_fix(ctx,canvas);
     render(ctx);// testing
 });
-window.addEventListener('wheel',(w)=>console.log(w));
+window.addEventListener('wheel',w=>console.log(w));
