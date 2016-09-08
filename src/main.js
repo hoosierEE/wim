@@ -18,23 +18,26 @@ const update=(perf_now,input)=>{
     // TODO: function tree
 };
 
-const NORM_CMD={/* commands */
-    verb:'cdy',
-    mult0:'123456789',
-    multN:'0123456789',
-    modifier:'ai',
-    text_obj:'eEbBps"\'<>`{}[]()$0',
-    motion:'hjklbBwWeE0^${}fFtTG',
-    goto_insert:'aAiIoO',
-    goto_visual:'vV',
-};
+/* Model -- command language */
+const NORMAL_COMMAND={
+    verb:[...'cdy'],
+    mult0:[...'123456789'],
+    multN:[...'0123456789'],
+    modifier:[...'ai'],
+    text_obj:[...'eEbBps"\'<>`{}[]()$0'],
+    motion:[...'hjklbBwWeE0^${}fFtTG'],
+    goto_insert:[...'aAiIoO'],
+    goto_visual:[...'vV'],
+    goto_normal:['Escape'],
+},
 
-/* Events -- keyboard and mouse */
+/* Model -- inputs */
 const IN={
     KC:new Set(),/* Key Chord */
     KS:[[],[],[],[]],/* Key Sequence */
 };
 
+/* Events -- keyboard and mouse */
 const key_handler=(x,down,input,updatefn)=>{
     const rk={/* 'reduced' KeyboardEvents */
         key:x.key,
@@ -53,10 +56,10 @@ const key_handler=(x,down,input,updatefn)=>{
             'KeyR':[2,4],
             /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
-        (ok_chords?ok_chords.every(m=>rk.mod!==m):true) && x.preventDefault();
+        ok_chords?ok_chords.every(m=>rk.mod!==m):true && x.preventDefault();
         /* 2. Push each field to their respective fields in KS array. */
         Object.keys(rk).forEach((x,i)=>input.KS[i].push(rk[x]));
-        requestAnimationFrame((t)=>updatefn(t,IN));
+        requestAnimationFrame(t=>updatefn(t,IN));
     }
 };
 window.addEventListener('keydown',event=>key_handler(event,1,IN,update));
@@ -67,8 +70,9 @@ const pixel_ratio_fix=(c,cc)=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
     [cc.height,cc.width]=[h,w].map(x=>dpr*x);
     [cc.style.height,cc.style.width]=[h,w].map(x=>x+'px');
-    //c.font='16px monospace';/* Must set AFTER modifying canvas! */
-    c.font='16px "Source Code Pro for Powerline"';/* Must set AFTER modifying canvas! */
+    /* Set font size AFTER modifying canvas! */
+    //c.font='16px monospace';
+    c.font='16px "Source Code Pro for Powerline"';
     c.scale(dpr,dpr);
 };
 const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
