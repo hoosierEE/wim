@@ -44,7 +44,7 @@ const key_handler=(x,down,input,updatefn)=>{
         code:x.code,
         timestamp:x.timeStamp|0,
         mod:['altKey','ctrlKey','metaKey','shiftKey']
-            .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)
+            .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)/* rebase 4 bits -> Int */
     };
     /* update KC here so requestAnimationFrame always deals with the same facts */
     input.KC[down?'add':'delete'](rk.code);
