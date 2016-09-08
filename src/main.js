@@ -40,9 +40,8 @@ const key_handler=(x,down,input,updatefn)=>{
         key:x.key,
         code:x.code,
         timestamp:x.timeStamp|0,
-        mod:[[altKey],'ctrlKey','metaKey','shiftKey']
-            .map(y=>x[y]|0)
-            .reduce((a,b,i,arr)=>a+b*2**(arr.length-1-i),0)
+        mod:['altKey','ctrlKey','metaKey','shiftKey']
+            .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)
     };
     /* update KC here so requestAnimationFrame always deals with the same facts */
     input.KC[down?'add':'delete'](rk.code);
