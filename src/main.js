@@ -1,6 +1,6 @@
 /* wim -- modal text editor */
 /* Testing -- write a string to the canvas */
-const render=c=>{
+const render=(c)=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     const lines=[
         'TODO keyboard input',
