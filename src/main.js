@@ -12,24 +12,26 @@ const render=(c)=>{
 
 /* update : AnyEvent -> Action */
 const update=(perf_now,input)=>{
+    const get_token=(tok)=>TOKENS.filter(x=>x.indexOf(tok)>-1).map(x=>[x[0],tok]);
     /* what kind of keyboard input did we just get? */
-    console.table(zip(input.KS).slice(-10));// end of sequence
-    console.log(Array.from(input.KC));// chords
-    // TODO: function tree
+    console.log(JSON.stringify(get_token(input.KS[0].slice(-1)[0]),null,4));
+    //console.log(Array.from(input.KC));// chords
+    // TODO: command FSM
 };
 
 /* Model -- command language */
-const NORMAL_COMMAND={
-    verb:[...'cdy'],
-    mult0:[...'123456789'],
-    multN:[...'0123456789'],
-    modifier:[...'ai'],
-    text_obj:[...'eEbBps"\'<>`{}[]()$0'],
-    motion:[...'hjklbBwWeE0^${}fFtTG'],
-    goto_insert:[...'aAiIoO'],
-    goto_visual:[...'vV'],
-    goto_normal:['Escape'],
-},
+const TOKENS=[
+    ['mult_first', ...'123456789'],
+    ['mult_rest', ...'0123456789'],
+    ['text_object', ...'bBeEwWsp()[]{}`\'"<>$#0'],
+    ['motion', ...'hjkl'],
+    ['clipboard', ...'pP'],
+    ['verb', ...'cdy'],
+    ['verb_verb', 'cc','dd','yy'],
+    ['modifier', ...'ai'],
+    ['insert', ...'aAiIoOs'],
+    ['search_char', ...'fFtT'],
+];
 
 /* Model -- inputs */
 const IN={
@@ -58,7 +60,10 @@ const key_handler=(x,down,input,updatefn)=>{
         }[rk.code];
         ok_chords?ok_chords.every(m=>rk.mod!==m):true && x.preventDefault();
         /* 2. Push each field to their respective fields in KS array. */
-        Object.keys(rk).forEach((x,i)=>input.KS[i].push(rk[x]));
+        Object.keys(rk).forEach((x,i)=>{
+            input.KS[i].push(rk[x]);
+            input.KS[i]=input.KS[i].slice(-10);
+        });
         requestAnimationFrame(t=>updatefn(t,IN));
     }
 };

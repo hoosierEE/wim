@@ -1,5 +1,5 @@
 {
-    "app": {"background": {"scripts": ["src/background.js"]}},
+    "app": {"background": {"scripts": ["src/startup.js"]}},
     "manifest_version": 2,
     "name": "wim",
     "version": "0.1",
