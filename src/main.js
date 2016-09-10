@@ -19,10 +19,51 @@ const update=(perf_now,input)=>{
     // TODO: command FSM
 };
 
+const proc_state=(current,next_states)=>{
+    if(current in next_states){
+        switch(current){
+        case'mult0':
+            next_states=STATES.slice(1);
+            break;
+        case'multN':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'text_object':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'motion':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'clipboard':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'verb':
+            next_states=['verb','modifier'];
+            break;
+        case'verb_verb':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'modifier':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'insert':
+            next_states=['multN','verb','modifier'];
+            break;
+        case'search_char':
+            next_states=['multN','verb','modifier'];
+            break;
+        }
+    }
+    else{
+        state.current='init';
+        next_states=[];
+    }
+};
+
 /* Model -- command language */
 const TOKENS=[
-    ['mult_first', ...'123456789'],
-    ['mult_rest', ...'0123456789'],
+    ['mult0', ...'123456789'],
+    ['multN', ...'0123456789'],
     ['text_object', ...'bBeEwWsp()[]{}`\'"<>$#0'],
     ['motion', ...'hjkl'],
     ['clipboard', ...'pP'],
@@ -32,6 +73,7 @@ const TOKENS=[
     ['insert', ...'aAiIoOs'],
     ['search_char', ...'fFtT'],
 ];
+const STATES=TOKENS.map(x=>x[0]);
 
 /* Model -- inputs */
 const IN={
