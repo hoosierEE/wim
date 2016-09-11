@@ -20,37 +20,29 @@ const update=(perf_now,input)=>{
 };
 
 const proc_state=(current,next_states)=>{
-    if(current in next_states){
+    if(current in next_states){/* not a 'wildcard' */
         switch(current){
-        case'mult0':
-            next_states=STATES.slice(1);
-            break;
-        case'multN':
-            next_states=['multN','verb','modifier'];
-            break;
-        case'text_object':
-            next_states=['multN','verb','modifier'];
-            break;
-        case'motion':
-            next_states=['multN','verb','modifier'];
-            break;
         case'clipboard':
-            next_states=['multN','verb','modifier'];
-            break;
-        case'verb':
-            next_states=['verb','modifier'];
-            break;
+        case'motion':
+        case'text_object':
         case'verb_verb':
-            next_states=['multN','verb','modifier'];
-            break;
-        case'modifier':
-            next_states=['multN','verb','modifier'];
+            next_states=[];
             break;
         case'insert':
-            next_states=['multN','verb','modifier'];
-            break;
         case'search_char':
-            next_states=['multN','verb','modifier'];
+            next_states=['ascii'];
+            break;
+        case'mult0':
+            next_states=STATES.filter(x=>x!='mult0');
+            break;
+        case'multN':
+            next_states=STATES.filter(x=>x!='mult0');
+            break;
+        case'verb':
+            next_states=['mult0','modifier'];
+            break;
+        case'modifier':
+            next_states=['mult0','text_object','motion'];
             break;
         }
     }
@@ -72,6 +64,7 @@ const TOKENS=[
     ['modifier', ...'ai'],
     ['insert', ...'aAiIoOs'],
     ['search_char', ...'fFtT'],
+    ['ascii',''],
 ];
 const STATES=TOKENS.map(x=>x[0]);
 
