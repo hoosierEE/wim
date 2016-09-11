@@ -1,4 +1,5 @@
-#+ATTR_HTML style="margin-left: auto; margin-right: auto;"
+
+* #+ATTR_HTML style="margin-left: auto; margin-right: auto;"
 [[/images/wim-128.png]]
 
 
