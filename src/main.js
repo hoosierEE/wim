@@ -1,23 +1,20 @@
 /* wim -- modal text editor */
 /* Testing -- write a string to the canvas */
-const read_one=(e)=>{
-    console.log(e);
-    let file=e.target.files[0];
-    if(!file)return;
-    let reader=new FileReader();
-    reader.onload=(e)=>{
-        let contents=e.target.result;
-        //displayContents(contents);
-        render(ctx,contents);
+const read_one=(e,context)=>{
+    if(!e.target.files[0]){console.log('no file found');return;}
+    const rat=(e)=>{
+        let r=new FileReader();
+        r.onload=(e)=>render(context,e.target.result);
+        r.readAsText(e.target.files[0]);
     };
-    reader.readAsText(file);
+    rat(e);
 };
-document.getElementById('file-input').addEventListener('change',read_one,false);
+document.getElementById('file-input').addEventListener('change',(e)=>read_one(e,ctx),false);
 
 const render=(c,lines)=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     let la=lines.split('\n'),pos=0;
-    la.forEach(l=>{
+    la.map(l=>{
         pos+=20;
         c.fillText(l,20,pos);
     });
@@ -25,78 +22,42 @@ const render=(c,lines)=>{
 
 /* update : AnyEvent -> Action */
 const update=(perf_now,input)=>{
-    /* what kind of keyboard input did we just get? */
-    const get_token=(tok)=>TOKENS.filter(x=>x.indexOf(tok)>-1).map(x=>[x[0],tok]);
-    console.log(JSON.stringify(get_token(input.KS[0].slice(-1)[0]),null,4));
+    console.table(zip(input.KS));
     //console.log(Array.from(input.KC));// chords
-
-    // TODO: command FSM
 };
-
-const proc_state=(current,next_states)=>{
-    if(current in next_states){/* not a 'wildcard' */
-        switch(current){
-        case'clipboard':
-        case'motion':
-        case'text_object':
-        case'verb_verb':
-            next_states=[];
-            break;
-        case'insert':
-        case'search_char':
-            next_states=['ascii'];
-            break;
-        case'mult0':
-            next_states=STATES.filter(x=>x!='mult0');
-            break;
-        case'multN':
-            next_states=STATES.filter(x=>x!='mult0');
-            break;
-        case'verb':
-            next_states=['mult0','modifier'];
-            break;
-        case'modifier':
-            next_states=['mult0','text_object','motion'];
-            break;
-        }
-    }
-    else{
-        state.current='init';
-        next_states=[];
-    }
-};
-
-/* Model -- command language */
-const TOKENS={
-    mult0:{
-        matches:[...'123456789'],
-    },
-    multN:{
-        matches:[...'0123456789'],
-    },
-    verb:{
-        matches:[...'cdy'],
-    },
-    text_object:{
-        matches:[...'0^${}()[]<>`"\'bBeEwWG'],
-    },
-    motion:{
-        matches:[...'hjkl'],
-    },
-    search_char:{
-        matches:[...'fFtT'],
-    },
-    edit:{
-        matches:[...'pPr'],
-    },
-};
-const STATES=Object.keys(TOKENS);
 
 /* Model -- inputs */
 const IN={
     KC:new Set(),/* Key Chord */
     KS:[[],[],[],[]],/* Key Sequence */
 };
+
+/* Model -- state machine */
+const SM={
+    PATTERNS:{
+        mult0:[...'123456789'],
+        multN:[...'0123456789'],
+        verb:[...'cdy'],
+        text_object:[...'0^${}()[]<>`"\'bBeEwWG'],
+        motion:[...'hjkl'],
+        search_char:[...'fFtT'],
+        edit:[...'pPr'],
+    },
+    counter:0,
+    get STATES(){delete this.STATES;return this.STATES=Object.keys(this.PATTERNS);},/* cache lazily */
+    handle_evt(e){
+        const atf=this.fns[this.current_state][e.type];
+        if(!atf)atf=this.unexpected_evt;
+        const ns=atf.call(this,e);
+        if(!ns)ns=this.current_state;
+        if(!this.fns[ns])ns=this.undefined_state(e,ns);
+        this.current_state=ns;
+    },
+    unexpected_evt(e){},
+    unexpected_state(e,s){},
+    fns:{
+    },
+}
 
 /* Events -- keyboard and mouse */
 const key_handler=(x,down,input,updatefn)=>{
@@ -123,11 +84,11 @@ const key_handler=(x,down,input,updatefn)=>{
             input.KS[i].push(rk[x]);
             input.KS[i]=input.KS[i].slice(-10);
         });
-        requestAnimationFrame(t=>updatefn(t,IN));
+        requestAnimationFrame(t=>updatefn(t,input));
     }
 };
-window.addEventListener('keydown',event=>key_handler(event,1,IN,update));
-window.addEventListener('keyup',event=>key_handler(event,0,IN,update));
+window.addEventListener('keydown',event=>key_handler(event,1,IN,update));/* global IN only referenced here */
+window.addEventListener('keyup',event=>key_handler(event,0,IN,update));/* global IN only referenced here */
 
 /* Window -- load, resize */
 const pixel_ratio_fix=(c,cc)=>{
@@ -139,10 +100,10 @@ const pixel_ratio_fix=(c,cc)=>{
     c.font='16px "Source Code Pro for Powerline"';
     c.scale(dpr,dpr);
 };
-const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
-window.addEventListener('resize',()=>pixel_ratio_fix(ctx,canvas));
+const ctx=document.getElementById('c').getContext('2d');
+window.addEventListener('resize',()=>pixel_ratio_fix(ctx,ctx.canvas));
 window.addEventListener('load',()=>{
-    pixel_ratio_fix(ctx,canvas);
+    pixel_ratio_fix(ctx,ctx.canvas);
     render(ctx,'test\ning');// testing
 });
-window.addEventListener('wheel',w=>console.log(w));
+//window.addEventListener('wheel',w=>console.log(w));
