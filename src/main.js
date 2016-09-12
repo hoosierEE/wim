@@ -1,21 +1,35 @@
 /* wim -- modal text editor */
 /* Testing -- write a string to the canvas */
-const render=(c)=>{
+const read_one=(e)=>{
+    console.log(e);
+    let file=e.target.files[0];
+    if(!file)return;
+    let reader=new FileReader();
+    reader.onload=(e)=>{
+        let contents=e.target.result;
+        //displayContents(contents);
+        render(ctx,contents);
+    };
+    reader.readAsText(file);
+};
+document.getElementById('file-input').addEventListener('change',read_one,false);
+
+const render=(c,lines)=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
-    const lines=[
-        'TODO keyboard input',
-        '- inputs accumulate until they can be recognized as \'operations\', then are pushed to history stack',
-        '- \'insert mode\' inputs aren\'t saved.'
-    ].join('\n');
-    c.fillText(lines,20,30);
+    let la=lines.split('\n'),pos=0;
+    la.forEach(l=>{
+        pos+=20;
+        c.fillText(l,20,pos);
+    });
 };
 
 /* update : AnyEvent -> Action */
 const update=(perf_now,input)=>{
-    const get_token=(tok)=>TOKENS.filter(x=>x.indexOf(tok)>-1).map(x=>[x[0],tok]);
     /* what kind of keyboard input did we just get? */
+    const get_token=(tok)=>TOKENS.filter(x=>x.indexOf(tok)>-1).map(x=>[x[0],tok]);
     console.log(JSON.stringify(get_token(input.KS[0].slice(-1)[0]),null,4));
     //console.log(Array.from(input.KC));// chords
+
     // TODO: command FSM
 };
 
@@ -53,20 +67,30 @@ const proc_state=(current,next_states)=>{
 };
 
 /* Model -- command language */
-const TOKENS=[
-    ['mult0', ...'123456789'],
-    ['multN', ...'0123456789'],
-    ['text_object', ...'bBeEwWsp()[]{}`\'"<>$#0'],
-    ['motion', ...'hjkl'],
-    ['clipboard', ...'pP'],
-    ['verb', ...'cdy'],
-    ['verb_verb', 'cc','dd','yy'],
-    ['modifier', ...'ai'],
-    ['insert', ...'aAiIoOs'],
-    ['search_char', ...'fFtT'],
-    ['ascii',''],
-];
-const STATES=TOKENS.map(x=>x[0]);
+const TOKENS={
+    mult0:{
+        matches:[...'123456789'],
+    },
+    multN:{
+        matches:[...'0123456789'],
+    },
+    verb:{
+        matches:[...'cdy'],
+    },
+    text_object:{
+        matches:[...'0^${}()[]<>`"\'bBeEwWG'],
+    },
+    motion:{
+        matches:[...'hjkl'],
+    },
+    search_char:{
+        matches:[...'fFtT'],
+    },
+    edit:{
+        matches:[...'pPr'],
+    },
+};
+const STATES=Object.keys(TOKENS);
 
 /* Model -- inputs */
 const IN={
@@ -119,6 +143,6 @@ const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
 window.addEventListener('resize',()=>pixel_ratio_fix(ctx,canvas));
 window.addEventListener('load',()=>{
     pixel_ratio_fix(ctx,canvas);
-    render(ctx);// testing
+    render(ctx,'test\ning');// testing
 });
 window.addEventListener('wheel',w=>console.log(w));
