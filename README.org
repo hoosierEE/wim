@@ -1,4 +1,4 @@
-#+ATTR_HTML: :style margin-left: auto; margin-right: auto; border-style: solid;
+#+ATTR_HTML: style="margin-left: auto; margin-right: auto; border-style: solid;"
 [[images/wim-128.png]]
 
 Wim is a modal text editor and Chrome app, similar to Vim, except:
