@@ -1,6 +1,21 @@
+* Event Loop
+My code often begins with a pseudocode skeleton like this:
+
+#+BEGIN_SRC pseudocode
+loop_forever{
+  in = consume_input();
+  new_state = process_input(in,state); // process_input is a state machine
+  render_output(new_state);
+  state = new_state;
+}
+#+END_SRC
+
+
+
 * Keyboard Input
 Wim is keyboard-centric and has to handle both key /sequences/ and key /chords/.
 This can get quite complex if you let it.
+
 For example, say you create a keyboard shortcut =Ctrl a b= where 3 keys are held simultaneously.
 But you might also want a sequence =a b= in which first a is pressed, then b.
 A fast touch-typist may not fully release one key before pressing another, so Wim might register that both the =Ctrl a b= chord and the =a b= sequence have occurred.

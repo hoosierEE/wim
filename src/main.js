@@ -43,6 +43,11 @@ const SM={
         search_char:[...'fFtT'],
         edit:[...'pPr'],
     },
+    decode(single_key){
+        return this.STATES.reduce((a,b,i)=>{
+            return a.push(this.PATTERNS[i].filter(x=>single_key===x));
+        },[]);
+    },
     counter:0,
     get STATES(){delete this.STATES;return this.STATES=Object.keys(this.PATTERNS);},/* cache lazily */
     handle_evt(e){
