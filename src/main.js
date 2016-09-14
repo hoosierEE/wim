@@ -1,4 +1,5 @@
 /* wim -- modal text editor */
+
 /* Testing -- write a string to the canvas */
 const read_one=(e,context)=>{
     if(!e.target.files[0]){console.log('no file found');return;}
@@ -22,9 +23,11 @@ const render=(c,lines)=>{
 
 /* update : AnyEvent -> Action */
 const update=(perf_now,input)=>{
-    console.table(zip(input.KS));
+    //console.table(SM.decode(input.KS[0].slice(-1)[0]));
+    console.log(SM.handle_evt(SM.decode(input.KS[0].slice(-1)[0])));
     //console.log(Array.from(input.KC));// chords
 };
+
 
 /* Model -- inputs */
 const IN={
@@ -34,37 +37,123 @@ const IN={
 
 /* Model -- state machine */
 const SM={
-    PATTERNS:{
+    /* data */
+    multiplier:1,
+    multiplier_str:'1',
+    current_state:'mult0',
+    initial_state:'mult0',
+    SEQS:{
         mult0:[...'123456789'],
         multN:[...'0123456789'],
         verb:[...'cdy'],
+        modifier:[...'ai'],
         text_object:[...'0^${}()[]<>`"\'bBeEwWG'],
         motion:[...'hjkl'],
         search_char:[...'fFtT'],
-        edit:[...'pPr'],
+        edit:[...'aAiIoOpPrxX'],
+        undo:[...'u'],
+        repeat:[...',.'],
     },
+    get STATES(){delete this.STATES;return this.STATES=Object.keys(this.SEQS);},/* lazy-cache */
+
+    /* methods */
     decode(single_key){
-        return this.STATES.reduce((a,b,i)=>{
-            return a.push(this.PATTERNS[i].filter(x=>single_key===x));
-        },[]);
+        let result=[];
+        for(let x in this.SEQS)
+            if(this.SEQS[x].indexOf(single_key)>-1)
+                result.push({type:x,val:single_key});
+        return result;
     },
-    counter:0,
-    get STATES(){delete this.STATES;return this.STATES=Object.keys(this.PATTERNS);},/* cache lazily */
     handle_evt(e){
-        const atf=this.fns[this.current_state][e.type];
-        if(!atf)atf=this.unexpected_evt;
-        const ns=atf.call(this,e);
-        if(!ns)ns=this.current_state;
-        if(!this.fns[ns])ns=this.undefined_state(e,ns);
-        this.current_state=ns;
+        /* Scan array e. If a match is found, use it. */
+        let fn=this.unexpected_event,
+            ee=null,// event?
+            tmp=[...e];// copy e
+        while(tmp.length){
+            ee=tmp.pop();
+            fn=this.FUNS[this.current_state][ee.type];
+            console.log(`fn is ${fn}`);
+            if(fn){break;}
+            else{fn=this.unexpected_event;}
+        }
+
+        /* Call appropriate function (or error/cancel) based on calculated "next" state. */
+        //let next_state=fn.call(this,ee);
+        let next_state=fn(ee);//.call(this,ee);
+        if(!next_state)next_state=this.current_state;
+        if(!this.FUNS[next_state])next_state=this.unexpected_state(e,next_state);
+        this.current_state=next_state;
     },
-    unexpected_evt(e){},
-    unexpected_state(e,s){},
-    fns:{
+
+    unexpected_event(e){
+        console.log('unexpected event:');
+        console.log(e);
+        this.multiplier=1;
+        this.multiplier_str='1';
+        return this.initial_state;
+    },
+
+    unexpected_state(e,s){
+        console.log('unexpected state:');
+        console.log(s);
+        return unexpected_event(e);
+    },
+
+    /* state-event transition table */
+    get FUNS(){/* lazy-cache */
+        delete this.FUNS;
+        this.FUNS={
+            multN:{
+                multN(e){},
+                verb(e){},
+                text_object(e){
+                    // get mult
+                    this.multiplier_str='1';
+                },
+                motion(e){},
+                search_char(e){},
+                edit(e){},
+                undo(e){},
+                repeat(e){},
+            },
+            verb:{
+                mult0(e){},
+                modifier(e){},
+                text_object(e){},
+                motion(e){},
+                verb(e){
+                    // do something to whole line if same as previous verb
+                    console.log(e);
+                },
+            },
+            modifier:{
+                text_object(e){},
+                motion(e){},
+            },
+            text_object:{
+                // do something
+            },
+            motion:{
+                // do something
+            },
+            search_char:{
+                // get any ASCII char
+                any_char(e){},
+            },
+            any_char:{
+                // do something
+            },
+            edit:{
+                // do something
+            },
+        };
+        this.FUNS.mult0=this.FUNS.multN;
+        return this.FUNS;
     },
 }
 
-/* Events -- keyboard and mouse */
+
+/* Events -- keyboard */
 const key_handler=(x,down,input,updatefn)=>{
     const rk={/* 'reduced' KeyboardEvents */
         key:x.key,
@@ -73,6 +162,7 @@ const key_handler=(x,down,input,updatefn)=>{
         mod:['altKey','ctrlKey','metaKey','shiftKey']
             .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)/* rebase 4 bits -> Int */
     };
+
     /* update KC here so requestAnimationFrame always deals with the same facts */
     input.KC[down?'add':'delete'](rk.code);
     if(down){
@@ -84,6 +174,7 @@ const key_handler=(x,down,input,updatefn)=>{
             /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
         ok_chords?ok_chords.every(m=>rk.mod!==m):true && x.preventDefault();
+
         /* 2. Push each field to their respective fields in KS array. */
         Object.keys(rk).forEach((x,i)=>{
             input.KS[i].push(rk[x]);
@@ -94,6 +185,9 @@ const key_handler=(x,down,input,updatefn)=>{
 };
 window.addEventListener('keydown',event=>key_handler(event,1,IN,update));/* global IN only referenced here */
 window.addEventListener('keyup',event=>key_handler(event,0,IN,update));/* global IN only referenced here */
+/* Events -- mouse */
+//window.addEventListener('wheel',w=>console.log(w));
+
 
 /* Window -- load, resize */
 const pixel_ratio_fix=(c,cc)=>{
@@ -106,9 +200,10 @@ const pixel_ratio_fix=(c,cc)=>{
     c.scale(dpr,dpr);
 };
 const ctx=document.getElementById('c').getContext('2d');
-window.addEventListener('resize',()=>pixel_ratio_fix(ctx,ctx.canvas));
+window.addEventListener('resize',()=>{
+    pixel_ratio_fix(ctx,ctx.canvas);
+});
 window.addEventListener('load',()=>{
     pixel_ratio_fix(ctx,ctx.canvas);
     render(ctx,'test\ning');// testing
 });
-//window.addEventListener('wheel',w=>console.log(w));
