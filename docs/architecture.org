@@ -47,18 +47,30 @@ The following type-combinations make a valid command:
 * State Machine
 Another way to translate typed commands into functions is through a state machine (=x= is disallowed):
 
-| State\Input | mult0 | multN       | verb                    | modifier | text_object    | motion         | visual |
-|-------------+-------+-------------+-------------------------+----------+----------------+----------------+--------|
-| *init*      | multN | multN       | verb                    | x        | init,go()      | init,go()      | visual |
-| *mult0*     | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
-| *multN*     | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
-| *verb*      | verbN | x           | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
-| *verbN*     | x     | verbN,multN | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
-| *modifier*  | x     | x           | x                       | x        | init,ex(range) | init,ex(range) | x      |
-| *visual*    | visN  | x           | visual,ex(range)        | x        | visual         | visual         | init   |
-| *visN*      | x     | visN        | visual,ex(range)        | x        | visual         | visual         | init   |
-| *visV*      | visVN | x           | x                       | x        | init,ex(range) | init,ex(range) | init   |
-| *visVN*     | x     | visVN       | x                       | x        | init,ex(range) | init,ex(range) | init   |
+| State\Input | mult0 | multN       | verb               | modifier | texect_object    | motion           | visual |
+|-------------+-------+-------------+--------------------+----------+------------------+------------------+--------|
+| *init*      | multN | multN       | verb               | x        | init,go()        | init,go()        | visual |
+| *mult0*     | x     | multN       | verb               | x        | init,go()        | init,go()        | visual |
+| *multN*     | x     | multN       | verb               | x        | init,go()        | init,go()        | visual |
+| *verb*      | verbN | x           | init,double?()     | modifier | init,exec(range) | init,exec(range) | visV   |
+| *verbN*     | x     | verbN,multN | init,double?()     | modifier | init,exec(range) | init,exec(range) | visV   |
+| *modifier*  | x     | x           | x                  | x        | init,exec(range) | init,exec(range) | x      |
+| *visual*    | visN  | x           | visual,exec(range) | x        | visual           | visual           | init   |
+| *visN*      | x     | visN        | visual,exec(range) | x        | visual           | visual           | init   |
+| *visV*      | visVN | x           | x                  | x        | init,exec(range) | init,exec(range) | init   |
+| *visVN*     | x     | visVN       | x                  | x        | init,exec(range) | init,exec(range) | init   |
+
+Some additional states are shown separately for clarity:
+
+| State\Input    | mult0 | multN | edit  | search_char  | ASCII             | ESC                 |
+|----------------+-------+-------+-------+--------------+-------------------+---------------------|
+| *init*         | multN | multN | edit  | search_char  | x                 | x                   |
+| *mult0*        | x     | multN | editN | search_charN | x                 | x                   |
+| *multN*        | x     | multN | editN | search_charN | x                 | x                   |
+| *edit*         | x     | x     | x     | x            | edit,exec(char)   | cancel,exec(char)   |
+| *editN*        | x     | x     | x     | x            | edit,exec(char,N) | cancel,exec(char,N) |
+| *search_char*  | x     | x     | x     | x            | cancel,exec(char) | cancel              |
+| *search_charN* | x     | x     | x     | x            | cancel,exec(char) | cancel              |
 
 Note that states such as =verbN= are included so table references are acyclical.
 - [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
