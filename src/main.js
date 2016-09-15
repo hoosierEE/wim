@@ -37,33 +37,82 @@ const IN={
 
 /* Model -- state machine */
 const SM={
-    /* data */
     multiplier:1,
     multiplier_str:'1',
     current_state:'mult0',
     initial_state:'mult0',
-    SEQS:{
-        mult0:[...'123456789'],
-        multN:[...'0123456789'],
-        verb:[...'cdy'],
-        modifier:[...'ai'],
-        text_object:[...'0^${}()[]<>`"\'bBeEwWG'],
-        motion:[...'hjkl'],
-        search_char:[...'fFtT'],
-        edit:[...'aAiIoOpPrxX'],
-        undo:[...'u'],
-        repeat:[...',.'],
+
+    SEQS:{/* {Type:[Char]} */
+        mult0:'123456789',
+        multN:'0123456789',
+        verb:'cdy',
+        modifier:'ai',
+        text_object:'0^${}()[]<>`"\'bBeEwWG',
+        motion:'hjkl',
+        search_char:'fFtT',
+        edit:'aAiIoOpPrxX',
+        undo:'u',
+        repeat:',.',
     },
-    get STATES(){delete this.STATES;return this.STATES=Object.keys(this.SEQS);},/* lazy-cache */
+
+    /* SEQS is an object with Type keys and [Char] values.
+       SEQS_INV is an object with Char keys and [Type] values.
+       Computed and cached at first use. */
+    get SEQS_INV(){/* {Type:[Char]} -> {Char:[Type]} (lazy-cache) */
+        delete this.SEQS_INV;
+        let i_table={};
+        for(let s in this.SEQS){
+            [...this.SEQS[s]].forEach(x=>{
+                if(!i_table[x]){i_table[x]=[s];}
+                else{i_table[x].push(s);}
+            });
+        }
+        this.SEQS_INV=i_table;
+        return this.SEQS_INV;
+    },
+
+    TRANSITIONS:[
+        // mult
+        'mult0 multN',
+        'mult0 verb',
+        'mult0 modifier',
+        'mult0 text_object',
+        'mult0 motion',
+        'mult0 search_char',
+        'mult0 edit',
+        'mult0 undo',
+        'mult0 repeat',
+        'multN multN',
+        'multN verb',
+        'multN modifier',
+        'multN text_object',
+        'multN motion',
+        'multN search_char',
+        'multN edit',
+        'multN undo',
+        'multN repeat',
+
+        // verb
+        'verb mult0',
+        'verb verb',
+        'verb modifier',
+        'verb text_object',
+        'verb motion',
+        'verb search_char',
+
+        // modifier
+        'modifier text_object',
+        'modifier motion',
+
+        // search_char
+        'search_char ASCII',
+    ],
 
     /* methods */
     decode(single_key){
-        let result=[];
-        for(let x in this.SEQS)
-            if(this.SEQS[x].indexOf(single_key)>-1)
-                result.push({type:x,val:single_key});
-        return result;
+        return({val:single_key,types:this.SEQS_INV[single_key]});
     },
+
     handle_evt(e){
         /* Scan array e. If a match is found, use it. */
         let fn=this.unexpected_event,
@@ -116,6 +165,7 @@ const SM={
                 undo(e){},
                 repeat(e){},
             },
+
             verb:{
                 mult0(e){},
                 modifier(e){},
@@ -126,6 +176,7 @@ const SM={
                     console.log(e);
                 },
             },
+
             modifier:{
                 text_object(e){},
                 motion(e){},
