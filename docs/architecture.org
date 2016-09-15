@@ -45,18 +45,15 @@ The following type-combinations make a valid command:
 - =mult? repeat= repeat as many times as specified by =mult?=
 
 ** State Machine
-Another way to translate typed commands into functions is through a state machine.
-The letter x is used to indicate disallowed states.
+Another way to translate typed commands into functions is through a state machine (=x= is disallowed):
 
-| State\Input | mult0          | multN          | verb                      | modifier       | text_object | motion      |
-|-------------+----------------+----------------+---------------------------+----------------+-------------+-------------|
-| initial     | multN          | multN          | to(mult0,verb)            | x              | goto        | goto        |
-| mult0       | any            | any            | to(multN,verb)            | x              | goto        | goto        |
-| multN       | x              | any            | to(verb,mult0)            | x              | goto        | goto        |
-| verb        | to(multN,verb) | to(multN,verb) | doit(double_verb_if_same) | (obj \vert mo) | doit(range) | doit(range) |
-| modifier    | x              | x              | x                         | x              | x           | x           |
-| text_object | x              | x              | x                         | x              | x           | x           |
-| motion      | x              | x              | x                         | x              | x           | x           |
+| State\Input | mult0 | multN | verb                       | modifier | text_object | motion    |
+|-------------+-------+-------+----------------------------+----------+-------------+-----------|
+| initial     | multN | multN | verb                       | x        | init,go()   | init,go() |
+| mult0       | x     | multN | verb                       | x        | init,go()   | init,go() |
+| multN       | x     | multN | verb                       | x        | init,go()   | init,go() |
+| verb        | multN | multN | init,double_verb_if_same() | modifier | init,go()   | init,go() |
+| modifier    | x     | x     | x                          | x        | ex(range)   | ex(range) |
 
 - [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
 - [[https://gamedevelopment.tutsplus.com/tutorials/finite-state-machines-theory-and-implementation--gamedev-11867][State Machines for Games, in AS3]]
