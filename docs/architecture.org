@@ -1,8 +1,8 @@
 * Event Loop
-My code often begins with a pseudocode skeleton like this:
+The basic structure of the app is just this:
 
 #+BEGIN_SRC pseudocode
-loop_forever{
+while(true){
   in = consume_input();
   new_state = process_input(in,state); // process_input is a state machine
   render_output(new_state);
@@ -10,7 +10,58 @@ loop_forever{
 }
 #+END_SRC
 
+* TODO Command Parsing
+The UI is modal, so parsing contextual commands is the main feature.
 
+Inputs are classified according to type:
+
+#+BEGIN_SRC js
+let input_table=/* Type: input_char */
+{
+  mult0:'123456789',
+  multN:'0123456789',
+  verb:'cdvy',
+  modifier:'ai',
+  text_object:'0^${}()[]<>`"\'bBeEwWG',
+  motion:'hjkl',
+  search_char:'fFtT',
+  edit:'aAiIoOpPrxX',
+  undo:'u',
+  repeat:',.',
+};
+#+END_SRC
+
+The following type-combinations make a valid command:
+
+- =mult? verb mult? modifier? text_object= operates on a range defined by a text object
+- =mult? verb mult? search_char char= operates on the range (starting point, =char=)
+- =mult? verb mult? motion= operates on a range defined by (starting point, =motion=)
+- =mult? text_object= moves the cursor
+- =mult? motion= moves the cursor
+- =mult? search_char char= moves the cursor
+- =mult? edit [char] ESC= do =edit= as many times as specified by =mult?=
+- =visual [text_object|motion]= change visual selection mode and alter selection
+
+** State Machine
+One way to translate typed commands into functions is through a state machine.
+
+| State\Input | mult0  | multN | verb | modifier | text_object | motion | search_char | edit | undo | repeat | ASCII |
+|-------------+--------+-------+------+----------+-------------+--------+-------------+------+------+--------+-------|
+| mult0       | multN  |       |      |          |             |        |             |      |      |        |       |
+| multN       |        |       |      |          |             |        |             |      |      |        |       |
+| verb        | multN  |       |      |          |             |        |             |      |      |        |       |
+| modifier    | quit   |       |      |          |             |        |             |      |      |        |       |
+| text_object | x      |       |      |          |             |        |             |      |      |        |       |
+| motion      | x      |       |      |          |             |        |             |      |      |        |       |
+| search_char | ASCII  |       |      |          |             |        |             |      |      |        |       |
+| edit        | ASCII* |       |      |          |             |        |             |      |      |        |       |
+| undo        | do()   |       |      |          |             |        |             |      |      |        |       |
+| repeat      | do()   |       |      |          |             |        |             |      |      |        |       |
+| ASCII       |        |       |      |          |             |        |             |      |      |        |       |
+
+- [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
+- [[https://gamedevelopment.tutsplus.com/tutorials/finite-state-machines-theory-and-implementation--gamedev-11867][State Machines for Games, in AS3]]
+- [[https://github.com/Olical/StateMachine][State Machine library in JavaScript]]
 
 * Keyboard Input
 Wim is keyboard-centric and has to handle both key /sequences/ and key /chords/.

@@ -45,7 +45,7 @@ const SM={
     SEQS:{/* {Type:[Char]} */
         mult0:'123456789',
         multN:'0123456789',
-        verb:'cdy',
+        verb:'cdvy',
         modifier:'ai',
         text_object:'0^${}()[]<>`"\'bBeEwWG',
         motion:'hjkl',
