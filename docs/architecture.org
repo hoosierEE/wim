@@ -49,16 +49,16 @@ Another way to translate typed commands into functions is through a state machin
 
 | State\Input | mult0 | multN       | verb                    | modifier | text_object    | motion         | visual |
 |-------------+-------+-------------+-------------------------+----------+----------------+----------------+--------|
-| init        | multN | multN       | verb                    | x        | init,go()      | init,go()      | visual |
-| mult0       | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
-| multN       | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
-| verb        | verbN | x           | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
-| verbN       | x     | verbN,multN | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
-| modifier    | x     | x           | x                       | x        | init,ex(range) | init,ex(range) | x      |
-| visual      | visN  | x           | visual,ex(range)        | x        | visual         | visual         | init   |
-| visN        | x     | visN        | visual,ex(range)        | x        | visual         | visual         | init   |
-| visV        | visVN | x           | x                       | x        | init,ex(range) | init,ex(range) | init   |
-| visVN       | x     | visVN       | x                       | x        | init,ex(range) | init,ex(range) | init   |
+| *init*      | multN | multN       | verb                    | x        | init,go()      | init,go()      | visual |
+| *mult0*     | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
+| *multN*     | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
+| *verb*      | verbN | x           | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
+| *verbN*     | x     | verbN,multN | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
+| *modifier*  | x     | x           | x                       | x        | init,ex(range) | init,ex(range) | x      |
+| *visual*    | visN  | x           | visual,ex(range)        | x        | visual         | visual         | init   |
+| *visN*      | x     | visN        | visual,ex(range)        | x        | visual         | visual         | init   |
+| *visV*      | visVN | x           | x                       | x        | init,ex(range) | init,ex(range) | init   |
+| *visVN*     | x     | visVN       | x                       | x        | init,ex(range) | init,ex(range) | init   |
 
 Note that states such as =verbN= are included so table references are acyclical.
 - [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
