@@ -44,17 +44,23 @@ The following type-combinations make a valid command:
 - =mult? undo= undo as many times as specified by =mult?=
 - =mult? repeat= repeat as many times as specified by =mult?=
 
-** State Machine
+* State Machine
 Another way to translate typed commands into functions is through a state machine (=x= is disallowed):
 
-| State\Input | mult0 | multN | verb                       | modifier | text_object | motion    |
-|-------------+-------+-------+----------------------------+----------+-------------+-----------|
-| initial     | multN | multN | verb                       | x        | init,go()   | init,go() |
-| mult0       | x     | multN | verb                       | x        | init,go()   | init,go() |
-| multN       | x     | multN | verb                       | x        | init,go()   | init,go() |
-| verb        | multN | multN | init,double_verb_if_same() | modifier | init,go()   | init,go() |
-| modifier    | x     | x     | x                          | x        | ex(range)   | ex(range) |
+| State\Input | mult0 | multN       | verb                    | modifier | text_object    | motion         | visual |
+|-------------+-------+-------------+-------------------------+----------+----------------+----------------+--------|
+| init        | multN | multN       | verb                    | x        | init,go()      | init,go()      | visual |
+| mult0       | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
+| multN       | x     | multN       | verb                    | x        | init,go()      | init,go()      | visual |
+| verb        | verbN | x           | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
+| verbN       | x     | verbN,multN | init,dbl_verb_if_same() | modifier | init,ex(range) | init,ex(range) | visV   |
+| modifier    | x     | x           | x                       | x        | init,ex(range) | init,ex(range) | x      |
+| visual      | visN  | x           | visual,ex(range)        | x        | visual         | visual         | init   |
+| visN        | x     | visN        | visual,ex(range)        | x        | visual         | visual         | init   |
+| visV        | visVN | x           | x                       | x        | init,ex(range) | init,ex(range) | init   |
+| visVN       | x     | visVN       | x                       | x        | init,ex(range) | init,ex(range) | init   |
 
+This table doesn't show
 - [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
 - [[https://gamedevelopment.tutsplus.com/tutorials/finite-state-machines-theory-and-implementation--gamedev-11867][State Machines for Games, in AS3]]
 - [[https://github.com/Olical/StateMachine][State Machine library in JavaScript]]

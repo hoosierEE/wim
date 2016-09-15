@@ -71,43 +71,6 @@ const SM={
         return this.SEQS_INV;
     },
 
-    TRANSITIONS:[
-        // mult
-        'mult0 multN',
-        'mult0 verb',
-        'mult0 modifier',
-        'mult0 text_object',
-        'mult0 motion',
-        'mult0 search_char',
-        'mult0 edit',
-        'mult0 undo',
-        'mult0 repeat',
-        'multN multN',
-        'multN verb',
-        'multN modifier',
-        'multN text_object',
-        'multN motion',
-        'multN search_char',
-        'multN edit',
-        'multN undo',
-        'multN repeat',
-
-        // verb
-        'verb mult0',
-        'verb verb',
-        'verb modifier',
-        'verb text_object',
-        'verb motion',
-        'verb search_char',
-
-        // modifier
-        'modifier text_object',
-        'modifier motion',
-
-        // search_char
-        'search_char ASCII',
-    ],
-
     /* methods */
     decode(single_key){
         return({val:single_key,types:this.SEQS_INV[single_key]});
