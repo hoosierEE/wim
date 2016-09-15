@@ -53,7 +53,7 @@ The letter x is used to indicate disallowed states.
 | initial     | multN          | multN          | to(mult0,verb)            | x            | goto        | goto        |
 | mult0       | any            | any            | to(multN,verb)            | x            | goto        | goto        |
 | multN       | x              | any            | to(verb,mult0)            | x            | goto        | goto        |
-| verb        | to(multN,verb) | to(multN,verb) | doit(double_verb_if_same) | obj\{vert}mo | doit(range) | doit(range) |
+| verb        | to(multN,verb) | to(multN,verb) | doit(double_verb_if_same) | (obj\vertmo) | doit(range) | doit(range) |
 | modifier    | x              | x              | x                         | x            | x           | x           |
 | text_object | x              | x              | x                         | x            | x           | x           |
 | motion      | x              | x              | x                         | x            | x           | x           |
