@@ -1,5 +1,5 @@
 * Event Loop
-The basic structure of the app is just this:
+In principle Wim works like this pseudocode:
 
 #+BEGIN_SRC pseudocode
 while(true){
@@ -10,13 +10,15 @@ while(true){
 }
 #+END_SRC
 
-* Command Parsing
-The UI is modal, so parsing contextual commands is the main feature.
+But since Wim uses =addEventListener= to consume keyboard events, the =while= loop is implicit.
 
+In reality, Wim responds to each =KeyboardEvent= by placing a callback to the =process_input= and =render_output= functions in its event loop queue, through the use of =requestAnimationFrame=.
+
+* Command Parsing
 Inputs are classified according to type:
 
 #+BEGIN_SRC js
-let input_table=/* Type: input_char */
+let input_table=/* {Type:[Char]} */
 {
   mult0:'123456789',
   multN:'0123456789',
@@ -31,8 +33,10 @@ let input_table=/* Type: input_char */
 };
 #+END_SRC
 
-The following type-combinations make a valid command:
+Note that some chars belong to more than 1 type, for example =0= is in =multN= as well as =text_object=.
+Parsing a command depends on past state and can not be determined from the character sequence alone.
 
+The following type combinations make a valid command (=?= means optional):
 - =mult? verb mult? modifier? text_object= operates on a range defined by a text object
 - =mult? verb mult? search_char char= operates on the range (starting point, =char=)
 - =mult? verb mult? motion= operates on a range defined by (starting point, =motion=)
@@ -44,35 +48,9 @@ The following type-combinations make a valid command:
 - =mult? undo= undo as many times as specified by =mult?=
 - =mult? repeat= repeat as many times as specified by =mult?=
 
-* State Machine
-Another way to translate typed commands into functions is through a state machine (=x= is disallowed):
+* State Transition Tables
+Another way to represent valid commands is with a state transition table.
 
-| State\Input | mult0 | multN       | verb               | modifier | texect_object    | motion           | visual |
-|-------------+-------+-------------+--------------------+----------+------------------+------------------+--------|
-| *init*      | multN | multN       | verb               | x        | init,go()        | init,go()        | visual |
-| *mult0*     | x     | multN       | verb               | x        | init,go()        | init,go()        | visual |
-| *multN*     | x     | multN       | verb               | x        | init,go()        | init,go()        | visual |
-| *verb*      | verbN | x           | init,double?()     | modifier | init,exec(range) | init,exec(range) | visV   |
-| *verbN*     | x     | verbN,multN | init,double?()     | modifier | init,exec(range) | init,exec(range) | visV   |
-| *modifier*  | x     | x           | x                  | x        | init,exec(range) | init,exec(range) | x      |
-| *visual*    | visN  | x           | visual,exec(range) | x        | visual           | visual           | init   |
-| *visN*      | x     | visN        | visual,exec(range) | x        | visual           | visual           | init   |
-| *visV*      | visVN | x           | x                  | x        | init,exec(range) | init,exec(range) | init   |
-| *visVN*     | x     | visVN       | x                  | x        | init,exec(range) | init,exec(range) | init   |
-
-Some additional states are shown separately for clarity:
-
-| State\Input    | mult0 | multN | edit  | search_char  | ASCII             | ESC                 |
-|----------------+-------+-------+-------+--------------+-------------------+---------------------|
-| *init*         | multN | multN | edit  | search_char  | x                 | x                   |
-| *mult0*        | x     | multN | editN | search_charN | x                 | x                   |
-| *multN*        | x     | multN | editN | search_charN | x                 | x                   |
-| *edit*         | x     | x     | x     | x            | edit,exec(char)   | cancel,exec(char)   |
-| *editN*        | x     | x     | x     | x            | edit,exec(char,N) | cancel,exec(char,N) |
-| *search_char*  | x     | x     | x     | x            | cancel,exec(char) | cancel              |
-| *search_charN* | x     | x     | x     | x            | cancel,exec(char) | cancel              |
-
-Note that states such as =verbN= are included so table references are acyclical.
 - [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
 - [[https://gamedevelopment.tutsplus.com/tutorials/finite-state-machines-theory-and-implementation--gamedev-11867][State Machines for Games, in AS3]]
 - [[https://github.com/Olical/StateMachine][State Machine library in JavaScript]]
@@ -91,37 +69,33 @@ Wim must do one of:
 3. disallow conflicts (e.g. throw an exception if user tries to load a config with conflicts)
 4. ask the user to resolve conflicts manually
 
-Wim currently uses an implicit global rule because it's the simplest to implement.
+Wim currently uses an implicit global rule (chords take priority over sequences) because it's the simplest to implement.
 
 Wim also permits cancellation of an in-progress or multi-part command.
-This "cancel anything" command is bound to =Ctrl g= by default.
+The "cancel anything" command is bound to =Ctrl g= by default.
 
-Key sequences are =push=ed to an array; chords reside in a Set.
+Currently-pressed chords are stored in a =Set= until the keys are released.
+Recently-pressed keys are also stored in a fixed-length FIFO =Array=.
 
-** Keyboard Commands
-When in normal mode, Wim parses keyboard input [[https://en.wikipedia.org/wiki/Eager_evaluation][eagerly]], attempting to match keystrokes with predefined commands.
-When it finds a match, it executes that command.
-Otherwise it displays an error message indicating which command failed to match.
+** Individual Keys
+In normal mode, Wim parses keyboard input [[https://en.wikipedia.org/wiki/Eager_evaluation][eagerly]], attempting to match keystrokes with predefined commands.
 
-** =KeyboardEvent.code=
+*** KeyboardEvent.code : =String=
 These codes map to physical keyboard buttons.
 "KeyA" does not distinguish between upper- and lower-case =A=.
 
-** =KeyboardEvent.key=
+*** KeyboardEvent.key : =String=
 This can be a single-letter string such as "A" or a string representing the name of the key such as "Escape".
 MacOS allows users to enter combining characters, such as accented vowels, but as far as Chrome's KeyboardEvent interface is concerned, these are all "Dead" keys.
 If we want to accept characters beyond the default set we have to handle them ourselves.
 
-** =KeyboardEvent.timestamp=
+*** KeyboardEvent.timestamp : =u64=
 Milliseconds since program started.
-Truncated to int.
 
-** =KeyboardEvent.type=
-1 for "keydown", 0 for "keyup"
+*** KeyboardEvent.type : =u1=
+1 for "keydown", 0 for "keyup".
 
-** Modifier keys
-Wim converts =KeyboardEvent= modifier key properties ("altKey", "ctrlKey", "metaKey", and "shiftKey") into a 4-bit integer (number from 0 to 15).
-Any combination of modifier keys can be represented as a single number:
+** Modifier keys : =u4=
 
 | =alt= / =option= | =ctrl= | =meta= / =command= | =shfit= | =value= |
 |------------------+--------+--------------------+---------+---------|
@@ -144,15 +118,14 @@ Any combination of modifier keys can be represented as a single number:
 
 ** When =RawKeys= contains something interesting, do something
 Within normal mode, the user may:
-
-1. be in the middle of typing a valid command sequence
-2. finish typing a valid command sequence
-3. want to cancel a command sequence
-4. enter an invalid command sequence
+1. begin typing a command sequence
+2. be in the middle of typing a valid command sequence
+3. finish typing a valid command sequence
+4. cancel a command sequence
+5. enter an invalid command sequence
 
 Within insert mode, the user may:
-
 1. add characters
 2. remove characters
-3. want to leave insert mode (e.g. "Escape" key)
+3. leave insert mode (e.g. "Escape" key)
 4. move caret with arrow keys

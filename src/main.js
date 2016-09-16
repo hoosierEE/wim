@@ -12,6 +12,7 @@ const read_one=(e,context)=>{
 };
 document.getElementById('file-input').addEventListener('change',(e)=>read_one(e,ctx),false);
 
+/* render : context -> String -> ()*/
 const render=(c,lines)=>{
     c.clearRect(0,0,c.canvas.width,c.canvas.height);
     let la=lines.split('\n'),pos=0;
@@ -30,10 +31,7 @@ const update=(perf_now,input)=>{
 
 
 /* Model -- inputs */
-const IN={
-    KC:new Set(),/* Key Chord */
-    KS:[[],[],[],[]],/* Key Sequence */
-};
+const IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
 
 /* Model -- state machine */
 const SM={
@@ -58,8 +56,8 @@ const SM={
     /* SEQS is an object with Type keys and [Char] values.
        SEQS_INV is an object with Char keys and [Type] values.
        Computed and cached at first use. */
-    get SEQS_INV(){/* {Type:[Char]} -> {Char:[Type]} (lazy-cache) */
-        delete this.SEQS_INV;
+    get SEQS_INV(){/* {Char:[Type]} */
+        delete this.SEQS_INV;/* (lazy-cache) */
         let i_table={};
         for(let s in this.SEQS){
             [...this.SEQS[s]].forEach(x=>{
@@ -73,25 +71,26 @@ const SM={
 
     /* methods */
     decode(single_key){
-        return({val:single_key,types:this.SEQS_INV[single_key]});
+        let t=this.SEQS_INV[single_key];
+        return({val:single_key,type:t?t:null});
     },
 
     handle_evt(e){
         /* Scan array e. If a match is found, use it. */
         let fn=this.unexpected_event,
             ee=null,// event?
-            tmp=[...e];// copy e
+            tmp=[JSON.parse(JSON.stringify(e))];// copy e
         while(tmp.length){
             ee=tmp.pop();
             fn=this.FUNS[this.current_state][ee.type];
-            console.log(`fn is ${fn}`);
+            console.log(`'fn' is ${fn}`);
             if(fn){break;}
             else{fn=this.unexpected_event;}
         }
 
         /* Call appropriate function (or error/cancel) based on calculated "next" state. */
-        //let next_state=fn.call(this,ee);
-        let next_state=fn(ee);//.call(this,ee);
+        let next_state=fn.call(this,ee); // TODO is call() necessary?
+        //let next_state=fn(ee); // TODO or would this suffice?
         if(!next_state)next_state=this.current_state;
         if(!this.FUNS[next_state])next_state=this.unexpected_state(e,next_state);
         this.current_state=next_state;
@@ -111,57 +110,26 @@ const SM={
         return unexpected_event(e);
     },
 
-    /* state-event transition table */
-    get FUNS(){/* lazy-cache */
-        delete this.FUNS;
+    get FUNS(){/* table of {States:{Events()}} */
+        delete this.FUNS;/* lazy-cache */
         this.FUNS={
-            multN:{
-                multN(e){},
-                verb(e){},
-                text_object(e){
-                    // get mult
-                    this.multiplier_str='1';
-                },
-                motion(e){},
-                search_char(e){},
-                edit(e){},
-                undo(e){},
-                repeat(e){},
-            },
 
-            verb:{
-                mult0(e){},
-                modifier(e){},
-                text_object(e){},
-                motion(e){},
-                verb(e){
-                    // do something to whole line if same as previous verb
-                    console.log(e);
-                },
-            },
+            init:{},
+            multN:{},
+            verb:{},
+            verbN:{},
+            modifier:{},
+            vis:{},
+            visN:{},
+            visV:{},
+            visVN:{},
+            edit:{},
+            editN:{},
+            search_char:{},
+            search_charN:{},
 
-            modifier:{
-                text_object(e){},
-                motion(e){},
-            },
-            text_object:{
-                // do something
-            },
-            motion:{
-                // do something
-            },
-            search_char:{
-                // get any ASCII char
-                any_char(e){},
-            },
-            any_char:{
-                // do something
-            },
-            edit:{
-                // do something
-            },
         };
-        this.FUNS.mult0=this.FUNS.multN;
+        this.FUNS.mult0=this.FUNS.multN; /* mult0 is a copy of multN */
         return this.FUNS;
     },
 }
