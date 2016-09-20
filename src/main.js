@@ -31,10 +31,10 @@ const update=(perf_now,input)=>{
 
 
 /* Model -- inputs */
-const IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
+let IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
 
 /* Model -- state machine */
-const SM={
+let SM={
     multiplier:1,
     multiplier_str:'1',
     current_state:'mult0',
