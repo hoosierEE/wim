@@ -1,14 +1,10 @@
 /* wim -- modal text editor */
-
 /* Testing -- write a string to the canvas */
 const read_one=(e,context)=>{
     if(!e.target.files[0]){console.log('no file found');return;}
-    const rat=(e)=>{
-        let r=new FileReader();
-        r.onload=(e)=>render(context,e.target.result);
-        r.readAsText(e.target.files[0]);
-    };
-    rat(e);
+    let r=new FileReader();
+    r.onload=(e)=>render(context,e.target.result);
+    r.readAsText(e.target.files[0]);
 };
 document.getElementById('file-input').addEventListener('change',(e)=>read_one(e,ctx),false);
 
@@ -24,13 +20,12 @@ const render=(c,lines)=>{
 
 /* update : AnyEvent -> Action */
 const update=(perf_now,input)=>{
-    //console.table(SM.decode(input.KS[0].slice(-1)[0]));
-    console.log(SM.handle_evt(SM.decode(input.KS[0].slice(-1)[0])));
-    //console.log(Array.from(input.KC));// chords
+    (VIMUI.handle_evt(input));
 };
 
 
 /* Model -- inputs */
+<<<<<<< HEAD
 let IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
 
 /* Model -- state machine */
@@ -133,16 +128,20 @@ let SM={
         return this.FUNS;
     },
 }
+=======
+const IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [KeySequence] */};
+const MAX_KS_LENGTH=10;
+>>>>>>> 04f82950cce3f82873ad31e8afa5b1ef815f20cc
 
 
-/* Events -- keyboard */
+/* Keyboard */
 const key_handler=(x,down,input,updatefn)=>{
     const rk={/* 'reduced' KeyboardEvents */
         key:x.key,
         code:x.code,
         timestamp:x.timeStamp|0,
         mod:['altKey','ctrlKey','metaKey','shiftKey']
-            .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)/* rebase 4 bits -> Int */
+            .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)/* [u1,u1,u1,u1] -> u4 */
     };
 
     /* update KC here so requestAnimationFrame always deals with the same facts */
@@ -157,10 +156,10 @@ const key_handler=(x,down,input,updatefn)=>{
         }[rk.code];
         ok_chords?ok_chords.every(m=>rk.mod!==m):true && x.preventDefault();
 
-        /* 2. Push each field to their respective fields in KS array. */
+        /* 2. KS[0] is most recent value.  Max KS.length is 10. */
         Object.keys(rk).forEach((x,i)=>{
-            input.KS[i].push(rk[x]);
-            input.KS[i]=input.KS[i].slice(-10);
+            input.KS[i].unshift(rk[x]);
+            input.KS[i]=input.KS[i].slice(MAX_KS_LENGTH);// limit sequence length
         });
         requestAnimationFrame(t=>updatefn(t,input));
     }
