@@ -25,7 +25,6 @@ const update=(perf_now,input)=>{
 
 
 /* Model -- inputs */
-<<<<<<< HEAD
 let IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
 
 /* Model -- state machine */
@@ -128,10 +127,6 @@ let SM={
         return this.FUNS;
     },
 }
-=======
-const IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [KeySequence] */};
-const MAX_KS_LENGTH=10;
->>>>>>> 04f82950cce3f82873ad31e8afa5b1ef815f20cc
 
 
 /* Keyboard */
