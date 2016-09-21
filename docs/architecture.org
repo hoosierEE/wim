@@ -51,6 +51,8 @@ The following type combinations make a valid command (=?= means optional):
 * State Transition Tables
 Another way to represent valid commands is with a state transition table.
 
+Wim's state transition table is [[https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/pubhtml?gid=0&single=true][here]].
+
 - [[http://parlab.eecs.berkeley.edu/wiki/_media/patterns/finitestatemachine.pdf][Finite State Machine pattern (PDF)]]
 - [[https://gamedevelopment.tutsplus.com/tutorials/finite-state-machines-theory-and-implementation--gamedev-11867][State Machines for Games, in AS3]]
 - [[https://github.com/Olical/StateMachine][State Machine library in JavaScript]]
