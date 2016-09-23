@@ -1,7 +1,9 @@
 /* Vim-sytle UI */
-const VIMUI={
+const WIMUI={
     multiplier:1,
     multiplier_str:['',''],
+    append_multiplier(which,ch){this.multiplier_str[which]+=ch;},
+    compute_multiplier(){this.multiplier=this.multiplier_str.map(x=>parseInt(x,10)).reduce((a,b)=>a*b);},
     clear_multiplier(){this.multiplier=1;this.multiplier_str=['',''];},
     initial_state:'normal',
     current_state:'normal',
@@ -70,8 +72,7 @@ const VIMUI={
     unexpected_event(e){
         console.log('unexpected event:');
         console.log(e);
-        this.multiplier=[1,1];
-        this.multiplier_str=['',''];
+        this.clear_multiplier();
         return this.initial_state;
     },
 
@@ -87,7 +88,7 @@ const VIMUI={
 
             normal:{
                 mult_0(e){
-                    this.multiplier_str[0]+=e.val;
+                    this.append_multiplier(0,e.val);
                     return 'mult_N';
                 },
                 verb(e){return 'verb';},
@@ -112,7 +113,7 @@ const VIMUI={
 
             mult_0:{
                 mult_N(e){
-                    this.multiplier_str[0]+=e.val;
+                    this.append_multiplier(0,e.val);
                     return 'mult_N';
                 },
                 verb(e){
@@ -131,7 +132,7 @@ const VIMUI={
                 visual_line(e){return 'visual_line';},
                 visual_block(e){return 'visual_block';},
                 find_char(e){
-                    this.multiplier_str[1]+=e.val;
+                    this.append_multiplier(1,e.val);
                     return 'find_char';
                 },
                 insert(e){return 'insert_N';},

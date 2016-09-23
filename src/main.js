@@ -20,114 +20,12 @@ const render=(c,lines)=>{
 
 /* update : AnyEvent -> Action */
 const update=(perf_now,input)=>{
-    (VIMUI.handle_evt(input));
+    (WIMUI.handle_evt(input));
 };
 
 
 /* Model -- inputs */
 let IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
-
-/* Model -- state machine */
-let SM={
-    multiplier:1,
-    multiplier_str:'1',
-    current_state:'mult0',
-    initial_state:'mult0',
-
-    SEQS:{/* {Type:[Char]} */
-        mult0:'123456789',
-        multN:'0123456789',
-        verb:'cdvy',
-        modifier:'ai',
-        text_object:'0^${}()[]<>`"\'bBeEwWG',
-        motion:'hjkl',
-        search_char:'fFtT',
-        edit:'aAiIoOpPrxX',
-        undo:'u',
-        repeat:',.',
-    },
-
-    /* SEQS is an object with Type keys and [Char] values.
-       SEQS_INV is an object with Char keys and [Type] values.
-       Computed and cached at first use. */
-    get SEQS_INV(){/* {Char:[Type]} */
-        delete this.SEQS_INV;/* (lazy-cache) */
-        let i_table={};
-        for(let s in this.SEQS){
-            [...this.SEQS[s]].forEach(x=>{
-                if(!i_table[x]){i_table[x]=[s];}
-                else{i_table[x].push(s);}
-            });
-        }
-        this.SEQS_INV=i_table;
-        return this.SEQS_INV;
-    },
-
-    /* methods */
-    decode(single_key){
-        let t=this.SEQS_INV[single_key];
-        return({val:single_key,type:t?t:null});
-    },
-
-    handle_evt(e){
-        /* Scan array e. If a match is found, use it. */
-        let fn=this.unexpected_event,
-            ee=null,// event?
-            tmp=[JSON.parse(JSON.stringify(e))];// copy e
-        while(tmp.length){
-            ee=tmp.pop();
-            fn=this.FUNS[this.current_state][ee.type];
-            console.log(`'fn' is ${fn}`);
-            if(fn){break;}
-            else{fn=this.unexpected_event;}
-        }
-
-        /* Call appropriate function (or error/cancel) based on calculated "next" state. */
-        let next_state=fn.call(this,ee); // TODO is call() necessary?
-        //let next_state=fn(ee); // TODO or would this suffice?
-        if(!next_state)next_state=this.current_state;
-        if(!this.FUNS[next_state])next_state=this.unexpected_state(e,next_state);
-        this.current_state=next_state;
-    },
-
-    unexpected_event(e){
-        console.log('unexpected event:');
-        console.log(e);
-        this.multiplier=1;
-        this.multiplier_str='1';
-        return this.initial_state;
-    },
-
-    unexpected_state(e,s){
-        console.log('unexpected state:');
-        console.log(s);
-        return unexpected_event(e);
-    },
-
-    get FUNS(){/* table of {States:{Events()}} */
-        delete this.FUNS;/* lazy-cache */
-        this.FUNS={
-
-            init:{},
-            multN:{},
-            verb:{},
-            verbN:{},
-            modifier:{},
-            vis:{},
-            visN:{},
-            visV:{},
-            visVN:{},
-            edit:{},
-            editN:{},
-            search_char:{},
-            search_charN:{},
-
-        };
-        this.FUNS.mult0=this.FUNS.multN; /* mult0 is a copy of multN */
-        return this.FUNS;
-    },
-}
-
 
 /* Keyboard */
 const key_handler=(x,down,input,updatefn)=>{
