@@ -19,26 +19,28 @@ const render=(c,lines)=>{
 };
 
 /* update : AnyEvent -> Action */
-const update=(perf_now,input)=>{
-    (WIMUI.handle_evt(input));
+const update=(perf_now)=>{
+    WIMUI.handle_evt(IN);// step state machine
 };
 
 
 /* Model -- inputs */
 let IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
+const MAX_KS_LENGTH=10;
 
 /* Keyboard */
-const key_handler=(x,down,input,updatefn)=>{
+const key_handler=(kev,down,updatefn)=>{
     const rk={/* 'reduced' KeyboardEvents */
-        key:x.key,
-        code:x.code,
-        timestamp:x.timeStamp|0,
+        key:kev.key,
+        code:kev.code,
+        timestamp:kev.timeStamp|0,
+        /* Probably the most complex math in the whole program right here: */
         mod:['altKey','ctrlKey','metaKey','shiftKey']
-            .reduce((a,b,i,arr)=>a+(x[b]|0)*2**(arr.length-1-i),0)/* [u1,u1,u1,u1] -> u4 */
+            .reduce((a,b,i,arr)=>a+(kev[b]|0)*2**(arr.length-1-i),0)/* [u1,u1,u1,u1] -> u4 */
     };
 
     /* update KC here so requestAnimationFrame always deals with the same facts */
-    input.KC[down?'add':'delete'](rk.code);
+    IN.KC[down?'add':'delete'](rk.code);
     if(down){
         /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
            ok_chords are: 1 non-mod key, plus 1 or more mod keys. */
@@ -47,18 +49,18 @@ const key_handler=(x,down,input,updatefn)=>{
             'KeyR':[2,4],
             /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
-        ok_chords?ok_chords.every(m=>rk.mod!==m):true && x.preventDefault();
+        ok_chords?ok_chords.every(m=>rk.mod!==m):true && kev.preventDefault();
 
         /* 2. KS[0] is most recent value.  Max KS.length is 10. */
         Object.keys(rk).forEach((x,i)=>{
-            input.KS[i].unshift(rk[x]);
-            input.KS[i]=input.KS[i].slice(MAX_KS_LENGTH);// limit sequence length
+            IN.KS[i].unshift(rk[x]);
+            IN.KS[i]=IN.KS[i].slice(-MAX_KS_LENGTH);// limit sequence length
         });
-        requestAnimationFrame(t=>updatefn(t,input));
+        requestAnimationFrame(updatefn);
     }
 };
-window.addEventListener('keydown',event=>key_handler(event,1,IN,update));/* global IN only referenced here */
-window.addEventListener('keyup',event=>key_handler(event,0,IN,update));/* global IN only referenced here */
+window.addEventListener('keydown',kbd_event=>key_handler(kbd_event,1,update));
+window.addEventListener('keyup',kbd_event=>key_handler(kbd_event,0,update));
 /* Events -- mouse */
 //window.addEventListener('wheel',w=>console.log(w));
 

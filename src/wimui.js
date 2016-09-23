@@ -2,13 +2,14 @@
 const WIMUI={
     multiplier:1,
     multiplier_str:['',''],
-    append_multiplier(which,ch){this.multiplier_str[which]+=ch;},
-    compute_multiplier(){this.multiplier=this.multiplier_str.map(x=>parseInt(x,10)).reduce((a,b)=>a*b);},
-    clear_multiplier(){this.multiplier=1;this.multiplier_str=['',''];},
+    get_multiplier(multstr){/* [String] -> Int */
+        return multstr.reduce((a,b)=>a*(b||1),1)
+    },
+    reset_multiplier(){this.multiplier=1; this.multiplier_str=['',''];},
     initial_state:'normal',
     current_state:'normal',
 
-    /* Vim command language alphabet. */
+    /* Vim command language alphabet, 1 character at a time. */
     SEQS:{/* {Type:[Char]} */
         mult_0:'123456789',
         mult_N:'0123456789',
@@ -25,8 +26,9 @@ const WIMUI={
         undo:'u',
         repeat:'.',
     },
+    /* valid key chords during normal mode */
     CHORDS:{
-        Escape:[],
+        Escape:[0],
         BracketLeft:[2,4],
         KeyW:[2],
         KeyN:[2],
@@ -36,8 +38,8 @@ const WIMUI={
 
     /* An 'inverted' duplicate of SEQS
        Computed and cached upon first use. */
-    get SEQS_INV(){/* {Char:[Type]} */
-        delete this.SEQS_INV;/* (lazy-cache) */
+    get SEQINV(){/* {Char:[Type]} */
+        delete this.SEQINV;/* (lazy-cache) */
         let i_table={};
         for(let s in this.SEQS){
             [...this.SEQS[s]].forEach(x=>{
@@ -45,15 +47,14 @@ const WIMUI={
                 else{i_table[x].push(s);}
             });
         }
-        this.SEQS_INV=i_table;
-        return this.SEQS_INV;
+        return this.SEQINV=i_table;
     },
 
     /* methods */
     handle_evt(single_key){
-        let e={val:single_key,type:(this.SEQS_INV[single_key]||[])};
+        let e={val:single_key,type:(this.SEQINV[single_key]||[])};
 
-        /* Look for a state transition function based on current state and e. */
+        /* Try a state transition function based on current state and e. */
         let fn=this.unexpected_event;
         for(let i=0;i<e.type.length;++i){
             fn=this.FUNS[this.current_state][e.type[i]];
@@ -62,17 +63,16 @@ const WIMUI={
         }
 
         /* Call state trasition function, get next state. */
-        let next_state=fn.call(this,e); // TODO is call() necessary?
-        //let next_state=fn(ee); // TODO or would this suffice?
-        if(!next_state)next_state=this.current_state;
-        if(!this.FUNS[next_state])next_state=this.unexpected_state(e,next_state);
+        let next_state=fn.call(this,e); // TODO or: let next_state=fn(e);
+        if(!next_state){next_state=this.current_state;}
+        if(!this.FUNS[next_state]){next_state=this.unexpected_state(e,next_state);}
         this.current_state=next_state;
     },
 
     unexpected_event(e){
         console.log('unexpected event:');
         console.log(e);
-        this.clear_multiplier();
+        this.reset_multiplier();
         return this.initial_state;
     },
 
@@ -88,7 +88,7 @@ const WIMUI={
 
             normal:{
                 mult_0(e){
-                    this.append_multiplier(0,e.val);
+                    this.multiplier_str[0]+=e.val;
                     return 'mult_N';
                 },
                 verb(e){return 'verb';},
@@ -113,11 +113,11 @@ const WIMUI={
 
             mult_0:{
                 mult_N(e){
-                    this.append_multiplier(0,e.val);
+                    this.multiplier_str[0]+=e.val;
                     return 'mult_N';
                 },
                 verb(e){
-                    this.multiplier[0]*=parseInt(this.multiplier_str[0],10);
+                    this.multiplier_str[0]*=parseInt(this.multiplier_str[0],10);
                     return 'verb';
                 },
                 text_object(e){
@@ -132,7 +132,7 @@ const WIMUI={
                 visual_line(e){return 'visual_line';},
                 visual_block(e){return 'visual_block';},
                 find_char(e){
-                    this.append_multiplier(1,e.val);
+                    this.multiplier_str[1]+=e.val;
                     return 'find_char';
                 },
                 insert(e){return 'insert_N';},
