@@ -25,23 +25,23 @@ const update=(perf_now)=>{
 
 
 /* Model -- inputs */
-let IN={KC:new Set(),/* {Chord} */ KS:[[],[],[],[]],/* [Key] */};
+let IN={KC:new Set(),/* {KeyChord} */ KS:[[],[],[],[]],/* [[Key],[Code],[Millis],[ModCode]] */};
 const MAX_KS_LENGTH=10;
 
 /* Keyboard */
-const key_handler=(kev,down,updatefn)=>{
+const key_handler=(ev,is_keydown)=>{
     const rk={/* 'reduced' KeyboardEvents */
-        key:kev.key,
-        code:kev.code,
-        timestamp:kev.timeStamp|0,
-        /* Probably the most complex math in the whole program right here: */
+        key:ev.key,
+        code:ev.code,
+        timestamp:ev.timeStamp|0,
+        /* Probably the trickiest math in the whole program, right here: */
         mod:['altKey','ctrlKey','metaKey','shiftKey']
-            .reduce((a,b,i,arr)=>a+(kev[b]|0)*2**(arr.length-1-i),0)/* [u1,u1,u1,u1] -> u4 */
+            .reduce((a,b,i,arr)=>a+(ev[b]|0)*2**(arr.length-1-i),0)/* [u1,u1,u1,u1] -> u4 */
     };
 
     /* update KC here so requestAnimationFrame always deals with the same facts */
-    IN.KC[down?'add':'delete'](rk.code);
-    if(down){
+    IN.KC[is_keydown?'add':'delete'](rk.code);
+    if(is_keydown){// requestAnimationFrame() for keydown, not keyup
         /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
            ok_chords are: 1 non-mod key, plus 1 or more mod keys. */
         let ok_chords={
@@ -49,20 +49,20 @@ const key_handler=(kev,down,updatefn)=>{
             'KeyR':[2,4],
             /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
-        ok_chords?ok_chords.every(m=>rk.mod!==m):true && kev.preventDefault();
+        ok_chords?ok_chords.every(m=>rk.mod!==m):true && ev.preventDefault();
 
         /* 2. KS[0] is most recent value.  Max KS.length is 10. */
         Object.keys(rk).forEach((x,i)=>{
             IN.KS[i].unshift(rk[x]);
             IN.KS[i]=IN.KS[i].slice(-MAX_KS_LENGTH);// limit sequence length
         });
-        requestAnimationFrame(updatefn);
+        requestAnimationFrame(update);
     }
 };
-window.addEventListener('keydown',kbd_event=>key_handler(kbd_event,1,update));
-window.addEventListener('keyup',kbd_event=>key_handler(kbd_event,0,update));
-/* Events -- mouse */
-//window.addEventListener('wheel',w=>console.log(w));
+window.addEventListener('keydown',e=>key_handler(e,1));
+window.addEventListener('keyup',e=>key_handler(e,0));
+//window.addEventListener('wheel',e=>mouse_handler(e));
+//window.addEventListener('mousedown',e=>mouse_handler(e));
 
 
 /* Window -- load, resize */

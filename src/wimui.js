@@ -51,13 +51,20 @@ const WIMUI={
     },
 
     /* methods */
-    handle_evt(single_key){
-        let e={val:single_key,type:(this.SEQINV[single_key]||[])};
+    handle_evt(input){
+        /* NOTE: input may be a union of key chords, sequences, and mouse events. */
+        let e={
+            seq_type:this.SEQINV[input.KS[0][0]]||[],
+        };
+        console.log(e);
 
         /* Try a state transition function based on current state and e. */
         let fn=this.unexpected_event;
-        for(let i=0;i<e.type.length;++i){
-            fn=this.FUNS[this.current_state][e.type[i]];
+        for(let i=0;i<e.seq_type.length;++i){
+            /* First, attempt to match a chord. */
+            // TODO
+            /* If no chords, attempt to match a sequence. */
+            fn=this.FUNS[this.current_state][e.seq_type[i]];
             if(fn){break;}/* Found one! */
             else{fn=this.unexpected_event;}/* No match found this iteration */
         }
@@ -70,15 +77,13 @@ const WIMUI={
     },
 
     unexpected_event(e){
-        console.log('unexpected event:');
-        console.log(e);
+        console.log(`unexpected event: ${e}`);
         this.reset_multiplier();
         return this.initial_state;
     },
 
     unexpected_state(e,s){
-        console.log('unexpected state:');
-        console.log(s);
+        console.log(`unexpected state: ${e}`);
         return unexpected_event(e);
     },
 
