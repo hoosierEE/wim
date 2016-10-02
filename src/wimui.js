@@ -52,11 +52,11 @@ const WIMUI={
 
     /* methods */
     handle_evt(input){
-        /* NOTE: input may be a union of key chords, sequences, and mouse events. */
-        let e={
-            seq_type:this.SEQINV[input.KS[0][0]]||[],
-        };
-        console.log(e);
+        /* NOTE input can contain: key chords, sequences, and mouse events. */
+        let ek=input.KS[0][0], // last pressed key
+            ec=Array.from(input.KC), // down keys
+            et=this.SEQINV[ek]||[]; // type of last pressed key
+        //console.log([ek,ec,et]);
 
         /* Try a state transition function based on current state and e. */
         let fn=this.unexpected_event;
@@ -98,11 +98,11 @@ const WIMUI={
                 },
                 verb(e){return 'verb';},
                 text_object(e){
-                    // go(e)
+                    // move_cursor_to_object_if_possible
                     return 'normal';
                 },
                 motion(e){
-                    // go(e)
+                    // move_cursor_by_motion_if_possible
                     return 'normal';
                 },
                 visual(e){return 'visual';},
@@ -111,9 +111,18 @@ const WIMUI={
                 find_char(e){return 'find_char';},
                 insert(e){return 'insert';},
                 escape(e){return 'normal';},
-                edit(e){return 'normal';},
+                edit(e){
+                    //switch(e.){
+                    //case'o':
+                    //case'O':
+                    //}
+                    return 'normal';
+                },
                 undo(e){return 'normal';},
-                repeat(e){return 'normal';},
+                repeat(e){
+                    // repeat_last_thing
+                    return 'normal';
+                },
             },
 
             mult_0:{

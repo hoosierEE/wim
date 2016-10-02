@@ -1,20 +1,19 @@
-/* wim -- modal text editor */
-/* Testing -- write a string to the canvas */
-const read_one=(e,context)=>{
-    if(!e.target.files[0]){console.log('no file found');return;}
-    let r=new FileReader();
-    r.onload=(e)=>render(context,e.target.result);
-    r.readAsText(e.target.files[0]);
-};
-document.getElementById('file-input').addEventListener('change',(e)=>read_one(e,ctx),false);
+/* main.js -- Wraps the browser.
+   All I/O goes through here:
+   - persistent state
+   - keyboard/mouse input
+   - drawing to screen
+   - config file load/save */
 
-/* render : context -> String -> ()*/
-const render=(c,lines)=>{
-    c.clearRect(0,0,c.canvas.width,c.canvas.height);
+const ctx=document.getElementById('c').getContext('2d');
+
+/* render : canvas -> String -> IO() */
+const render=(lines)=>{
+    ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
     let la=lines.split('\n'),pos=0;
-    la.map(l=>{
+    la.forEach(l=>{
         pos+=20;
-        c.fillText(l,20,pos);
+        ctx.fillText(l,20,pos);
     });
 };
 
@@ -24,24 +23,26 @@ const update=(perf_now)=>{
 };
 
 
-/* Model -- inputs */
-let IN={KC:new Set(),/* {KeyChord} */ KS:[[],[],[],[]],/* [[Key],[Code],[Millis],[ModCode]] */};
-const MAX_KS_LENGTH=10;
+let IN={
+    KC:new Set(),/* {KeyChord} */
+    KS:[[],[],[],[]],/* [[Key],[Code],[Millis],[ModCode]] */
+    KSLEN:10,
+};
 
-/* Keyboard */
+/* key_handler : KeyboardEvent -> u1 -> IO() */
 const key_handler=(ev,is_keydown)=>{
-    const rk={/* 'reduced' KeyboardEvents */
-        key:ev.key,
-        code:ev.code,
-        timestamp:ev.timeStamp|0,
-        /* Probably the trickiest math in the whole program, right here: */
-        mod:['altKey','ctrlKey','metaKey','shiftKey']
-            .reduce((a,b,i,arr)=>a+(ev[b]|0)*2**(arr.length-1-i),0)/* [u1,u1,u1,u1] -> u4 */
-    };
-
-    /* update KC here so requestAnimationFrame always deals with the same facts */
-    IN.KC[is_keydown?'add':'delete'](rk.code);
-    if(is_keydown){// requestAnimationFrame() for keydown, not keyup
+        IN.KC[is_keydown?'add':'delete'](ev.code);
+    if(is_keydown){/* update KC here so requestAnimationFrame always deals with the same facts */
+        requestAnimationFrame(update);
+        const rk={/* 'reduced' KeyboardEvents */
+            key:ev.key,
+            code:ev.code,
+            timestamp:ev.timeStamp|0,
+            /* Probably the trickiest math in the whole program right here:
+               Rebase any combo of 4 modifier keys into a 4-bit integer. */
+            mod:['altKey','ctrlKey','metaKey','shiftKey']
+                .reduce((a,b,i,ar)=>a+(ev[b]|0)*2**(ar.length-1-i),0),
+        };
         /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
            ok_chords are: 1 non-mod key, plus 1 or more mod keys. */
         let ok_chords={
@@ -50,36 +51,27 @@ const key_handler=(ev,is_keydown)=>{
             /* whitelist more keyboard shortcuts here if you want */
         }[rk.code];
         ok_chords?ok_chords.every(m=>rk.mod!==m):true && ev.preventDefault();
-
         /* 2. KS[0] is most recent value.  Max KS.length is 10. */
         Object.keys(rk).forEach((x,i)=>{
-            IN.KS[i].unshift(rk[x]);
-            IN.KS[i]=IN.KS[i].slice(-MAX_KS_LENGTH);// limit sequence length
+                IN.KS[i].unshift(rk[x]);
+                IN.KS[i]=IN.KS[i].slice(-IN.KSLEN);// limit sequence length
         });
-        requestAnimationFrame(update);
     }
 };
 window.addEventListener('keydown',e=>key_handler(e,1));
 window.addEventListener('keyup',e=>key_handler(e,0));
-//window.addEventListener('wheel',e=>mouse_handler(e));
-//window.addEventListener('mousedown',e=>mouse_handler(e));
-
 
 /* Window -- load, resize */
-const pixel_ratio_fix=(c,cc)=>{
+const pixel_ratio_fix=()=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
-    [cc.height,cc.width]=[h,w].map(x=>dpr*x);
-    [cc.style.height,cc.style.width]=[h,w].map(x=>x+'px');
+    [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
+    [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
     /* Set font size AFTER modifying canvas! */
-    //c.font='16px monospace';
-    c.font='16px "Source Code Pro for Powerline"';
-    c.scale(dpr,dpr);
+    ctx.font='16px "Source Code Pro for Powerline"'; //ctx.font='16px monospace';
+    ctx.scale(dpr,dpr);
 };
-const ctx=document.getElementById('c').getContext('2d');
-window.addEventListener('resize',()=>{
-    pixel_ratio_fix(ctx,ctx.canvas);
-});
 window.addEventListener('load',()=>{
-    pixel_ratio_fix(ctx,ctx.canvas);
-    render(ctx,'test\ning');// testing
+    pixel_ratio_fix();
+    render('Hello\n   world!');
 });
+window.addEventListener('resize',pixel_ratio_fix);
