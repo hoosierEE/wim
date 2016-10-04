@@ -1,9 +1,10 @@
-/* main.js -- Wraps the browser.
+/* main.js -- Entry point; wraps the browser.
    All I/O goes through here:
    - persistent state
    - keyboard/mouse input
    - drawing to screen
-   - config file load/save */
+   - config file load/save
+*/
 const ctx=document.getElementById('c').getContext('2d');
 
 /* render : String -> IO()
@@ -29,50 +30,16 @@ let IN={
 };
 
 /* key_handler : KeyboardEvent -> u1 -> IO() */
-// const key_handler=(ev,is_keydown)=>{
-//         IN.KC[is_keydown?'add':'delete'](ev.code);
-//     if(is_keydown){/* update KC here so requestAnimationFrame always deals with the same facts */
-//         const rk={/* 'reduced' KeyboardEvents */
-//             key:ev.key,
-//             code:ev.code,
-//             timestamp:ev.timeStamp|0,
-//             mod:['altKey','ctrlKey','metaKey','shiftKey']
-//                 .reduce((a,b,i,ar)=>a+(ev[b]|0)*2**(ar.length-1-i),0),/* [String:4] to [u1:4] to u4 */
-//         };
-//         /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
-//            ok_chords are: 1 non-mod key, plus 1 or more mod keys. */
-//         let ok_chords={
-//             'KeyI':[5,10],
-//             'KeyR':[2,4],
-//             /* whitelist more keyboard shortcuts here if you want */
-//         }[rk.code];
-//         ok_chords?ok_chords.every(m=>rk.mod!==m):true && ev.preventDefault();
-//         /* 2. KS[0] is newest.  Max KS length is 10. */
-//         Object.keys(rk).forEach((x,i)=>{IN.KS[i].unshift(rk[x]); IN.KS[i]=IN.KS[i].slice(-IN.KS_MAXLEN);});
-//         requestAnimationFrame(update);
-//     }
-// };
-
-/* key_handler : KeyboardEvent -> u1 -> IO() */
 const key_handler=(ev,is_keydown)=>{
         IN.KC[is_keydown?'add':'delete'](ev.code);
-    if(is_keydown){/* update KC here so requestAnimationFrame always deals with the same facts */
-        const rk=[/* 'reduced' KeyboardEvents */
-            ev.key,
-            ev.code,
-            ev.timeStamp|0,
-            ['altKey','ctrlKey','metaKey','shiftKey']
-                .reduce((a,b,i,ar)=>a+(ev[b]|0)*2**(ar.length-1-i),0),
-        ];
-        /* 1. Call preventDefault() on everything EXCEPT the chords listed below.
-           ok_chords are: 1 non-mod key, plus 1 or more mod keys. */
-        let ok_chords={
+    if(is_keydown){
+        const rk=[ev.key, ev.code, ev.timeStamp|0,
+                  ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)];
+        const okc={
             'KeyI':[5,10],
             'KeyR':[2,4],
-            /* whitelist more keyboard shortcuts here if you want */
-        }[rk[1]];
-        ok_chords?ok_chords.every(m=>rk[3]!==m):true && ev.preventDefault();
-        /* 2. KS[0] is newest.  Max KS length is 10. */
+        }[rk[1]];okc?okc.every(m=>rk[3]!==m):true && ev.preventDefault();
+        console.log(rk);
         rk.forEach((x,i)=>{IN.KS[i].unshift(rk[x]); IN.KS[i]=IN.KS[i].slice(-IN.KS_MAXLEN);});
         requestAnimationFrame(update);
     }
