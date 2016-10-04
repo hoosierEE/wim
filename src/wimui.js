@@ -15,7 +15,7 @@ const WIMUI={
         mult_N:'0123456789',
         verb:'cdvy',
         modifier:'ai',
-        text_object:'0^${}()[]<>`"\'bBeEwWG',
+        text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
         motion:'hjkl',
         edit:'oOpPrxX',
         insert:'aAiI',
