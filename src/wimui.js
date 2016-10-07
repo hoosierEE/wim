@@ -350,23 +350,43 @@ const WIMUI={
             // TODO implement ascii(e)
             find_char:{
                 escape(e):{return 'normal'},
-                ascii(e):{},
+                ascii(e):{
+                    // go(range)
+                    return 'normal';
+                },
             },
+
             find_char_visual:{
                 escape(e):{return 'normal'},
-                ascii(e):{},
+                ascii(e):{
+                    // go(range)
+                    return 'find_char_visual';
+                },
             },
+
             find_char_visual_line:{
                 escape(e):{return 'normal'},
-                ascii(e):{},
+                ascii(e):{
+                    // go(range)
+                    return 'find_char_visual_line';
+                },
             },
+
             find_char_visual_block:{
                 escape(e):{return 'normal'},
-                ascii(e):{},
+                ascii(e):{
+                    // go(range)
+                    return 'find_char_visual_block';
+                },
             },
+
             find_char_verb:{
                 escape(e):{return 'normal'},
-                ascii(e):{},
+                ascii(e):{
+                    // if e is found
+                    // do(range)
+                    return 'normal'
+                },
             },
 
             insert:{
