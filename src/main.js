@@ -19,6 +19,7 @@ const render=(lines)=>{
 /* update : AnyEvent -> Action */
 /* update : Model -> Model */
 const update=(performance_now)=>{
+    //console.log(Array.from(IN.KC));
     WIMUI.handle_evt(IN);
 };
 

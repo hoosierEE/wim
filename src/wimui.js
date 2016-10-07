@@ -1,7 +1,10 @@
 /* Vim-sytle UI
-   The state machine design in this class is taken directly from
+   The state machine design in this class is taken directly from here (Thanks IBM!):
    http://www.ibm.com/developerworks/library/wa-finitemach1/
-   Thanks IBM! */
+
+   Offical WIMUI state transition table is here (x indicates disallowed state):
+   https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
+*/
 const WIMUI={
     multiplier:1,
     multiplier_str:['',''],
@@ -22,7 +25,7 @@ const WIMUI={
         motion:'hjkl',
         edit:'oOpPrxX',
         insert:'aAiI',
-        escape:'~',
+        escape:'',
         visual:'v',
         visual_line:'V',
         find_char:'fFtT',
@@ -33,39 +36,46 @@ const WIMUI={
 
     /* valid key chords during normal mode */
     CHORDS:{
-        Escape:[0],
-        BracketLeft:[2,4],
-        KeyW:[2],
-        KeyN:[2],
-        KeyU:[2],
-        KeyG:[2],
+        BracketLeft:{mods:[2,4],type:'escape'},
+        Escape:{mods:[-1],type:'escape'},
+        KeyG:{mods:[2],type:'escape'},
+        KeyN:{mods:[2],type:'motion'},
+        KeyU:{mods:[2],type:'motion'},
+        KeyW:{mods:[2],type:'edit'},
     },
 
     /* An 'inverted' duplicate of SEQS
        Computed and cached upon first use. */
     get SEQINV(){/* {Char:[Type]} */
         delete this.SEQINV;/* (lazy-cache) */
-        let i_table={};
+        let itbl={}; /* inverted table */
         for(let s in this.SEQS){
             [...this.SEQS[s]].forEach(x=>{
-                if(!i_table[x]){i_table[x]=[s];}
-                else{i_table[x].push(s);}
+                if(itbl[x]){itbl[x].push(s);}
+                else{itbl[x]=[s];}
             });
         }
-        return this.SEQINV=i_table;
+        return this.SEQINV=itbl;
     },
 
     /* methods */
     handle_evt(input){
         /* NOTE input can contain: key chords, sequences, and mouse events. */
         let ek=input.KS[0][0], /* last pressed key */
-            ec=Array.from(input.KC), /* down keys */
+            em=input.KS[3][0], /* last combination of modifier keys */
+            /* currently pressed keys which match a CHORD */
+            ec=Array.from(input.KC).map(x=>this.CHORDS[x])
+            .filter(Boolean)
+            .reduce((a,b)=>{a.push(b); return a;},[]),
             et=this.SEQINV[ek]||[]; /* type of last pressed key */
+
+        console.log(ec);
 
         /* Try a state transition function based on current state and e. */
         let fn=this.unexpected_event;
         for(let i=0;i<et.length;++i){
             /* TODO First, attempt to match a chord. */
+
             /* If no chords, attempt to match a sequence. */
             fn=this.TABLE[this.current_state][et[i]];
             if(fn){break;}/* Found one! */
