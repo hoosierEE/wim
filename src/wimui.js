@@ -25,7 +25,9 @@ const WIMUI={
         find_char:'fFtT',
         undo:'u',
         repeat:'.',
+        ascii:' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
     },
+
     /* valid key chords during normal mode */
     CHORDS:{
         Escape:[0],
@@ -56,13 +58,11 @@ const WIMUI={
         let ek=input.KS[0][0], // last pressed key
             ec=Array.from(input.KC), // down keys
             et=this.SEQINV[ek]||[]; // type of last pressed key
-        //console.log([ek,ec,et]);
 
         /* Try a state transition function based on current state and e. */
         let fn=this.unexpected_event;
         for(let i=0;i<e.seq_type.length;++i){
-            /* First, attempt to match a chord. */
-            // TODO
+            /* TODO First, attempt to match a chord. */
             /* If no chords, attempt to match a sequence. */
             fn=this.FUNS[this.current_state][e.seq_type[i]];
             if(fn){break;}/* Found one! */
@@ -112,7 +112,7 @@ const WIMUI={
                 insert(e){return 'insert';},
                 escape(e){return 'normal';},
                 edit(e){
-                    //switch(e.){
+                    //switch(e){
                     //case'o':
                     //case'O':
                     //}
@@ -127,11 +127,11 @@ const WIMUI={
 
             mult_0:{
                 mult_N(e){
-                    this.multiplier_str[0]+=e.val;
+                    //this.multiplier_str[0]+=e.val;
                     return 'mult_N';
                 },
                 verb(e){
-                    this.multiplier_str[0]*=parseInt(this.multiplier_str[0],10);
+                    //this.multiplier_str[0]*=parseInt(this.multiplier_str[0],10);
                     return 'verb';
                 },
                 text_object(e){
@@ -146,7 +146,7 @@ const WIMUI={
                 visual_line(e){return 'visual_line';},
                 visual_block(e){return 'visual_block';},
                 find_char(e){
-                    this.multiplier_str[1]+=e.val;
+                    //this.multiplier_str[1]+=e.val;
                     return 'find_char';
                 },
                 insert(e){return 'insert_N';},
@@ -157,75 +157,245 @@ const WIMUI={
             },
 
             mult_N:{
-                mult_N(e){},
-                verb(e){},
-                text_object(e){},
-                motion(e){},
-                visual(e){},
-                visual_line(e){},
-                visual_block(e){},
-                find_char(e){},
-                insert(e){},
-                escape(e){},
-                edit(e){},
-                undo(e){},
-                repeat(e){},
+                mult_N(e){
+                    //this.multiplier_str[0]+=e.val;
+                    return 'mult_N';
+                },
+                verb(e){
+                    //this.multiplier_str[0]*=parseInt(this.multiplier_str[0],10);
+                    return 'verb';
+                },
+                text_object(e){
+                    // go(e)
+                    return 'normal';
+                },
+                motion(e){
+                    // go(e)
+                    return 'normal';
+                },
+                visual(e){return 'visual';},
+                visual_line(e){return 'visual_line';},
+                visual_block(e){return 'visual_block';},
+                find_char(e){
+                    //this.multiplier_str[1]+=e.val;
+                    return 'find_char';
+                },
+                insert(e){return 'insert_N';},
+                escape(e){return 'normal';},
+                edit(e){return 'normal';},
+                undo(e){return 'normal';},
+                repeat(e){return 'normal';},
             },
 
             verb:{
-                mult_0(e){},
-                mult_N(e){},
-                verb(e){},
-                modifier(e){},
-                text_object(e){},
-                motion(e){},
-                find_char(e){},
-                insert(e){},
-                escape(e){},
+                mult_0(e){
+                    // save n1
+                    return 'post_verb';
+                },
+                mult_N(e){
+                    // save n1
+                    return 'post_verb';
+                },
+                verb(e){
+                    // if (verb == earlier verb) do(linewise);
+                    return 'normal';
+                },
+                modifier(e){return 'modifier';},
+                text_object(e){
+                    // go(object)
+                    return 'normal';
+                },
+                motion(e){
+                    // go(motion)
+                    return 'normal';
+                },
+                find_char(e){return 'find_char_verb';},
+                escape(e){return 'normal';},
             },
 
             post_verb:{
-                verb(e){},
-                modifier(e){},
-                text_object(e){},
-                motion(e){},
-                find_char(e){},
-                insert(e){},
-                escape(e){},
+                verb(e){
+                    // if (post_verb == verb) do(linewise);
+                    return 'normal';
+                },
+                modifier(e){return 'modifier';},
+                text_object(e){
+                    // do(object)
+                    return 'normal';
+                },
+                motion(e){
+                    // do(motion)
+                    return 'normal';
+                },
+                find_char(e){return 'find_char_verb';},
+                escape(e){return 'normal';},
             },
 
             modifier:{
-                modifier(e){},
-                text_object(e){},
-                motion(e){},
+                text_object(e){
+                    // do(object)
+                    return 'normal';
+                },
+                motion(e){
+                    // do(motion)
+                    return 'normal';
+                },
             },
 
             visual:{
-                mult_0(e){},
-                mult_N(e){},
-                verb(e){},
-                text_object(e){},
-                motion(e){},
-                visual(e){},
-                visual_line(e){},
-                visual_block(e){},
-                find_char(e){},
-                insert(e){},
-                escape(e){},
-                edit(e){},
+                mult_0(e){
+                    // save n0
+                    return 'visual';
+                },
+                mult_N(e){
+                    // save n0
+                    return 'visual';
+                },
+                verb(e){
+                    // do(range)
+                    return 'normal';
+                },
+                text_object(e){
+                    // go(object)
+                    return 'visual';
+                },
+                motion(e){
+                    // go(motion)
+                    return 'visual';
+                },
+                visual(e){return 'normal';},
+                visual_line(e){return 'visual_line';},
+                visual_block(e){return 'visual_block';},
+                find_char(e){return 'find_char_vis';},
+                insert(e){return 'insert';},
+                escape(e){return 'normal';},
+                edit(e){
+                    // edit()
+                    return 'normal';
+                },
             },
 
-            visual_line:{},
-            visual_block:{},
-            find_char:{},
-            find_char_visual:{},
-            find_char_visual_line:{},
-            find_char_visual_block:{},
-            find_char_verb:{},
-            insert:{},
-            insert_N:{},
-            insert_block:{},
-            insert_block_N:{},
+            visual_line:{
+                mult_0(e):{
+                    // save n0
+                    return 'visual_line';
+                },
+                mult_N(e):{
+                    // save n0
+                    return 'visual_line';
+                },
+                verb(e):{
+                    // do(linewise)
+                    return 'normal';
+                },
+                text_object(e):{
+                    // go(object)
+                    return 'visual_line';
+                },
+                motion(e):{
+                    // go(motion)
+                    return 'visual_line';
+                },
+                visual(e):{return 'visual';},
+                visual_line(e):{return 'visual_line';},
+                visual_block(e):{return 'normal';},
+                find_char(e):{return 'find_char_visual_line';},
+                insert(e):{
+                    // if(AIS)
+                    return 'insert_block';
+                },
+                escape(e):{return 'normal';},
+                edit(e):{
+                    // edit()
+                    return 'normal';
+                },
+            },
+
+            visual_block:{
+                mult_0(e):{
+                    // save n0
+                    return 'visual_line';
+                },
+                mult_N(e):{
+                    // save n0
+                    return 'visual_line';
+                },
+                verb(e):{
+                    // do(linewise)
+                    return 'normal';
+                },
+                text_object(e):{
+                    // go(object)
+                    return 'visual_line';
+                },
+                motion(e):{
+                    // go(motion)
+                    return 'visual_line';
+                },
+                visual(e):{return 'visual';},
+                visual_line(e):{return 'visual_line';},
+                visual_block(e):{return 'normal';},
+                find_char(e):{return 'find_char_visual_block';},
+                insert(e):{
+                    // if(AIS)
+                    return 'insert_block';
+                },
+                escape(e):{return 'normal';},
+                edit(e):{
+                    // edit()
+                    return 'normal';
+                },
+            },
+
+            // TODO implement ascii(e)
+            find_char:{
+                escape(e):{return 'normal'},
+                ascii(e):{},
+            },
+            find_char_visual:{
+                escape(e):{return 'normal'},
+                ascii(e):{},
+            },
+            find_char_visual_line:{
+                escape(e):{return 'normal'},
+                ascii(e):{},
+            },
+            find_char_visual_block:{
+                escape(e):{return 'normal'},
+                ascii(e):{},
+            },
+            find_char_verb:{
+                escape(e):{return 'normal'},
+                ascii(e):{},
+            },
+
+            insert:{
+                ascii(e):{
+                    // put(e)
+                    return 'insert';
+                },
+            },
+
+            insert_N:{
+                ascii(e):{
+                    // put(e)
+                    return 'insert_N';
+                },
+            },
+
+            insert_block:{
+                ascii(e):{
+                    // put(e)
+                    return 'insert_block';
+                },
+            },
+
+            insert_block_N:{
+                ascii(e):{
+                    // put(e)
+                    return 'insert_block_N';
+                },
+            },
 
         };
         this.FUNS.mult0=this.FUNS.multN; /* mult0 is a copy of multN */
