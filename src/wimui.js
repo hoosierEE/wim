@@ -1,4 +1,7 @@
-/* Vim-sytle UI */
+/* Vim-sytle UI
+   The state machine design in this class is taken directly from
+   http://www.ibm.com/developerworks/library/wa-finitemach1/
+   Thanks IBM! */
 const WIMUI={
     multiplier:1,
     multiplier_str:['',''],
