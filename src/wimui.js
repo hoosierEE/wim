@@ -16,7 +16,7 @@ const WIMUI={
     current_state:'normal',
 
     /* Vim command language alphabet, 1 character at a time. */
-    SEQS:{/* {Type:[Char]} */
+    atom:{/* {Type:[Char]} */
         mult_0:'123456789',
         mult_N:'0123456789',
         verb:'cdvy',
@@ -34,28 +34,42 @@ const WIMUI={
         ascii:' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
     },
 
-    /* valid key chords during normal mode */
-    CHORDS:{
-        BracketLeft:{mods:[2,4],type:'escape'},
-        Escape:{mods:[-1],type:'escape'},
-        KeyG:{mods:[2],type:'escape'},
-        KeyN:{mods:[2],type:'motion'},
-        KeyU:{mods:[2],type:'motion'},
-        KeyW:{mods:[2],type:'edit'},
-    },
-
-    /* An 'inverted' duplicate of SEQS
+    /* An 'inverted' version of atom
        Computed and cached upon first use. */
-    get SEQINV(){/* {Char:[Type]} */
-        delete this.SEQINV;/* (lazy-cache) */
+    get atom_i(){/* {Char:[Type]} */
+        delete this.atom_i;/* (lazy-cache) */
         let itbl={}; /* inverted table */
-        for(let s in this.SEQS){
-            [...this.SEQS[s]].forEach(x=>{
+        for(let s in this.atom){
+            [...this.atom[s]].forEach(x=>{
                 if(itbl[x]){itbl[x].push(s);}
                 else{itbl[x]=[s];}
             });
         }
-        return this.SEQINV=itbl;
+        return this.atom_i=itbl;
+    },
+
+    chord:{/* {Type:{Code:[Mods]}} */
+        escape:{
+            BracketLeft:[2,4],
+            Escape:[-1],
+            KeyG:[2],
+        },
+        motion:{
+            KeyD:[2],
+            KeyU:[2],
+        },
+    },
+
+    /* inverted version of chord */
+    get chord_i(){/* {Code:{Type,[Mods]}} */
+        delete this.chord_i;
+        let ci={};
+        for(let a in this.chord){
+            for(let k in this.chord[a]){
+                ci[k]={type:a,mods:this.chord[a][k]}
+            }
+        }
+        return this.chord_i=ci;
     },
 
     /* methods */
@@ -63,29 +77,31 @@ const WIMUI={
         /* NOTE input can contain: key chords, sequences, and mouse events. */
         let ek=input.KS[0][0], /* last pressed key */
             em=input.KS[3][0], /* last combination of modifier keys */
-            /* currently pressed keys which match a CHORD */
-            ec=Array.from(input.KC).map(x=>this.CHORDS[x])
-            .filter(Boolean)
-            .reduce((a,b)=>{a.push(b); return a;},[]),
-            et=this.SEQINV[ek]||[]; /* type of last pressed key */
+            et=this.atom_i[ek]||[], /* type of last pressed key */
+            eti=null; /* chosen type */
 
-        console.log(ec);
+        let ikc={};
+        input.KC.forEach(x=>{
+            let ii=this.chord_i[x];
+            if(ii){ikc[x]=ii;}
+        });
+        console.log(ikc);
 
         /* Try a state transition function based on current state and input. */
         let fn=this.unexpected_event;
         for(let i=0;i<et.length;++i){
             /* TODO First, attempt to match a chord. */
-
+            // TODO turn chord into action
             /* If no chords, attempt to match a sequence. */
-            fn=this.TABLE[this.current_state][et[i]];
-            if(fn){break;}/* Found one! */
+            fn=this.tbl[this.current_state][et[i]];
+            if(fn){eti=et[i];break;}/* Found one! */
             else{fn=this.unexpected_event;}/* No match found this iteration */
         }
 
         /* Call state trasition function, get next state. */
-        let next_state=fn.call(this,et); /* try */
+        let next_state=fn.call(this,eti); /* try */
         if(!next_state){next_state=this.current_state;} /* fallback 1 */
-        if(!this.TABLE[next_state]){next_state=this.unexpected_state(et,next_state);} /* fallback 2 */
+        if(!this.tbl[next_state]){next_state=this.unexpected_state(eti,next_state);} /* fallback 2 */
         console.log(`current: ${this.current_state}, next: ${next_state}`);
         this.current_state=next_state;
         /* TODO accumulate actual keyseq and send to handling function (in buffer?) */
@@ -102,9 +118,9 @@ const WIMUI={
         return unexpected_event(e);
     },
 
-    get TABLE(){/* table of {States:{Events()}} */
-        delete this.TABLE;/* lazy-cache */
-        this.TABLE={
+    get tbl(){/* table of {States:{Events()}} */
+        delete this.tbl;/* lazy-cache */
+        this.tbl={
 
             normal:{
                 mult_0(e){
@@ -382,16 +398,24 @@ const WIMUI={
             },
 
            insert_N:{
-                ascii(e){
-                    /* put(e) */
-                    return 'insert_N';
-                },
-            },
+               ascii(e){
+                   /* put(e) */
+                   return 'insert_N';
+               },
+               normal(e){
+                   /* put(e) in other lines */
+                   return 'normal';
+               },
+           },
 
-           insert_block:{
+            insert_block:{
                 ascii(e){
                     /* put(e) */
                     return 'insert_block';
+                },
+                normal(e){
+                    /* put(e) in other lines */
+                    return 'normal';
                 },
             },
 
@@ -400,11 +424,15 @@ const WIMUI={
                     /* put(e) */
                     return 'insert_block_N';
                 },
+                normal(e){
+                    /* put(e) in other lines */
+                    return 'normal';
+                },
             },
 
         };
-        this.TABLE.mult_0=this.TABLE.mult_N; /* mult_0 is a copy of mult_N */
-        return this.TABLE;
+        this.tbl.mult_0=this.tbl.mult_N; /* mult_0 is a copy of mult_N */
+        return this.tbl;
     },
 };
 
