@@ -3,8 +3,7 @@
    - persistent state
    - keyboard/mouse input
    - drawing to screen
-   - config file load/save
-*/
+   - config file load/save */
 const ctx=document.getElementById('c').getContext('2d');
 
 /* render : String -> IO()
@@ -37,18 +36,10 @@ const key_handler=(ev,is_keydown)=>{
         const rk=[ev.key, ev.code, ev.timeStamp|0,
                   ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
               okc={
-                  'KeyI':[5,10], /* (Cmd|Ctrl)+Shift+i */
-                  'KeyR':[2,4], /* (Cmd|Ctrl)+r */
-              }[rk[1]]; okc?okc.every(m=>rk[3]!==m):true && ev.preventDefault();
-        /* IN.KS[0].unshift(rk[0]); IN.KS[0].slice(-IN.KS_MAXLEN); */
-        /* IN.KS[1].unshift(rk[1]); IN.KS[1].slice(-IN.KS_MAXLEN); */
-        /* IN.KS[2].unshift(rk[2]); IN.KS[2].slice(-IN.KS_MAXLEN); */
-        /* IN.KS[3].unshift(rk[3]); IN.KS[3].slice(-IN.KS_MAXLEN); */
-        /* fancy version of above: */
-        rk.forEach((x,i)=>{
-                IN.KS[i].unshift(rk[i]);
-                IN.KS[i].slice(-IN.KS_MAXLEN);
-        });
+                  'KeyI':[5,10],/* (Cmd|Ctrl)+Shift+i */
+                  'KeyR':[2,4],/* (Cmd|Ctrl)+r */
+              }[rk[1]];okc?okc.every(m=>rk[3]!==m):true&&ev.preventDefault();
+        rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]);IN.KS[i].slice(-IN.KS_MAXLEN)});
         requestAnimationFrame(update);
     }
 };
