@@ -15,96 +15,86 @@ const WIMUI={
     initial_state:'normal',
     current_state:'normal',
 
-    /* Vim command language alphabet, 1 character at a time. */
-    atom:{/* {Type:[Char]} */
-        mult_0:'123456789',
-        mult_N:'0123456789',
-        verb:'cdvy',
-        modifier:'ai',
-        text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
-        motion:'hjkl',
-        edit:'oOpPrxX',
-        insert:'aAiI',
-        escape:'',
-        visual:'v',
-        visual_line:'V',
-        find_char:'fFtT',
-        undo:'u',
-        repeat:'.',
-        ascii:' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
-    },
-
-    /* An 'inverted' version of atom
-       Computed and cached upon first use. */
-    get atom_i(){/* {Char:[Type]} */
-        delete this.atom_i;/* (lazy-cache) */
-        let itbl={}; /* inverted table */
-        for(let s in this.atom){
-            [...this.atom[s]].forEach(x=>{
-                if(itbl[x]){itbl[x].push(s);}
-                else{itbl[x]=[s];}
+    get char(){/* {Char:[Type]} */
+        delete this.char;
+        let atm={/* {Type:[Char]} */
+            mult_0:'123456789',
+            mult_N:'0123456789',
+            verb:'cdy',
+            modifier:'ai',
+            text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
+            motion:'hjkl',
+            edit:'oOpPrxX',
+            insert:'aAiI',
+            escape:'',
+            visual:'v',
+            visual_line:'V',
+            find_char:'fFtT',
+            undo:'u',
+            repeat:'.',
+            ascii:' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
+        };
+        let it={}; for(let s in atm){
+            [...atm[s]].forEach(x=>{
+                if(it[x]){it[x].push(s);}
+                else{it[x]=[s];}
             });
         }
-        return this.atom_i=itbl;
+        return this.char=it;
     },
 
-    chord:{/* {Type:{Code:[Mods]}} */
-        escape:{
-            BracketLeft:[2,4],
-            Escape:[-1],
-            KeyG:[2],
-        },
-        motion:{
-            KeyD:[2],
-            KeyU:[2],
-        },
-    },
-
-    /* inverted version of chord */
-    get chord_i(){/* {Code:{Type,[Mods]}} */
-        delete this.chord_i;
-        let ci={};
-        for(let a in this.chord){
-            for(let k in this.chord[a]){
-                ci[k]={type:a,mods:this.chord[a][k]}
-            }
-        }
-        return this.chord_i=ci;
+    chord:{
+        'ESC':{act:'escape',code:'Escape',mods:[-1]},
+        'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
+        'C-g':{act:'escape',code:'KeyG',mods:[2]},
+        'C-d':{act:'motion',code:'KeyD',mods:[2]},
+        'C-u':{act:'motion',code:'KeyU',mods:[2]},
+        'C-v':{act:'visual_block',code:'KeyV',mods:[2]},
     },
 
     /* methods */
+    /* NOTE input can contain: key chords, sequences, and mouse events. */
     handle_evt(input){
-        /* NOTE input can contain: key chords, sequences, and mouse events. */
-        let ek=input.KS[0][0], /* last pressed key */
-            em=input.KS[3][0], /* last combination of modifier keys */
-            et=this.atom_i[ek]||[], /* type of last pressed key */
-            eti=null; /* chosen type */
-
-        let ikc={};
-        input.KC.forEach(x=>{
-            let ii=this.chord_i[x];
-            if(ii){ikc[x]=ii;}
-        });
-        console.log(ikc);
-
-        /* Try a state transition function based on current state and input. */
-        let fn=this.unexpected_event;
-        for(let i=0;i<et.length;++i){
-            /* TODO First, attempt to match a chord. */
-            // TODO turn chord into action
-            /* If no chords, attempt to match a sequence. */
-            fn=this.tbl[this.current_state][et[i]];
-            if(fn){eti=et[i];break;}/* Found one! */
-            else{fn=this.unexpected_event;}/* No match found this iteration */
+        let ek=input.KS[0][0],/* last pressed key */
+            em=input.KS[3][0],/* last combination of modifier keys */
+            et=this.char[ek]||[],/* type of last pressed key */
+            action='nop',/* default event */
+            fn, // fn=this.unexpected_event,
+            ok_chord={};
+        for(let icc in this.chord){
+            let i=this.chord[icc], eci=Array.from(input.KC).indexOf(i.code);
+            if(eci>-1 && (0>i.mods || i.mods.some(x=>x==em))){
+                ok_chord=i; ok_chord.name=icc; break;
+            }
         }
 
-        /* Call state trasition function, get next state. */
-        let next_state=fn.call(this,eti); /* try */
+        /* Check chords, then atoms for a valid next command. */
+        if(Object.keys(ok_chord).length){
+            if(fn=this.tbl[this.current_state][ok_chord.act]){action=ok_chord.act;}
+            else{console.log(`unexpected chord (${ok_chord.name}) in state (${this.current_state})`);}
+        }
+        else{
+            for(let i=0;i<et.length;++i){
+                if(et.length && (fn=this.tbl[this.current_state][et[i]])){
+                    action=et[i]; break;
+                }
+            }
+        }
+
+        /* Action or nop? */
+        if(action==='nop'){return;}
+        if(!action){fn=this.unexpected_event;}
+
+        /* Compute next state. */
+        let next_state=fn.call(this,action); /* try */
         if(!next_state){next_state=this.current_state;} /* fallback 1 */
-        if(!this.tbl[next_state]){next_state=this.unexpected_state(eti,next_state);} /* fallback 2 */
-        console.log(`current: ${this.current_state}, next: ${next_state}`);
+        if(!this.tbl[next_state]){next_state=this.unexpected_state(action,next_state);} /* fallback 2 */
+
+        console.log(`state: ${next_state}`);
+
         this.current_state=next_state;
-        /* TODO accumulate actual keyseq and send to handling function (in buffer?) */
+        /* TODO accumulate actual keys and, upon successful state change,
+           export the key sequence to external handling function. */
     },
 
     unexpected_event(e){
@@ -118,8 +108,8 @@ const WIMUI={
         return unexpected_event(e);
     },
 
-    get tbl(){/* table of {States:{Events()}} */
-        delete this.tbl;/* lazy-cache */
+    get tbl(){/* {States:{Events()}} */
+        delete this.tbl;
         this.tbl={
 
             normal:{
@@ -328,11 +318,11 @@ const WIMUI={
                 },
                 text_object(e){
                     /* go(object) */
-                    return 'visual_line';
+                    return 'visual_block';
                 },
                 motion(e){
                     /* go(motion) */
-                    return 'visual_line';
+                    return 'visual_block';
                 },
                 visual(e){return 'visual';},
                 visual_line(e){return 'visual_line';},
@@ -391,42 +381,43 @@ const WIMUI={
             },
 
             insert:{
+                escape(e){return 'normal';},
                 ascii(e){
                     /* put(e) */
                     return 'insert';
                 },
             },
 
-           insert_N:{
-               ascii(e){
-                   /* put(e) */
-                   return 'insert_N';
-               },
-               normal(e){
-                   /* put(e) in other lines */
-                   return 'normal';
-               },
-           },
+            insert_N:{
+                escape(e){
+                    /* put(e) in other lines */
+                    return 'normal';
+                },
+                ascii(e){
+                    /* put(e) */
+                    return 'insert_N';
+                },
+            },
 
             insert_block:{
+                escape(e){
+                    /* put(e) in other lines */
+                    return 'normal';
+                },
                 ascii(e){
                     /* put(e) */
                     return 'insert_block';
                 },
-                normal(e){
-                    /* put(e) in other lines */
-                    return 'normal';
-                },
             },
 
             insert_block_N:{
+                escape(e){
+                    /* put(e) in other lines */
+                    return 'normal';
+                },
                 ascii(e){
                     /* put(e) */
                     return 'insert_block_N';
-                },
-                normal(e){
-                    /* put(e) in other lines */
-                    return 'normal';
                 },
             },
 
@@ -435,4 +426,3 @@ const WIMUI={
         return this.tbl;
     },
 };
-
