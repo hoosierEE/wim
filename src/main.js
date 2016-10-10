@@ -34,11 +34,11 @@ const key_handler=(ev,is_keydown)=>{
         IN.KC[is_keydown?'add':'delete'](ev.code);
     if(is_keydown){
         const rk=[ev.key, ev.code, ev.timeStamp|0,
-                  ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
-              okc={
-                  'KeyI':[5,10],/* (Cmd|Ctrl)+Shift+i */
-                  'KeyR':[2,4],/* (Cmd|Ctrl)+r */
-              }[rk[1]];okc?okc.every(m=>rk[3]!==m):true&&ev.preventDefault();
+                  ['altKey','ctrlKey','metaKey','shiftKey']
+                  .reduce((a,b,i)=>a|((ev[b]|0)<<i),0)];
+        const okc={'KeyI':[5,10],/* (Cmd|Ctrl)+Shift+i */
+                   'KeyR':[2,4],/* (Cmd|Ctrl)+r */
+                  }[rk[1]];okc?okc.every(m=>rk[3]!==m):true&&ev.preventDefault();
         rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]);IN.KS[i].slice(-IN.KS_MAXLEN)});
         requestAnimationFrame(update);
     }
