@@ -39,7 +39,10 @@ const key_handler=(ev,is_keydown)=>{
         const okc={'KeyI':[5,10],/* (Cmd|Ctrl)+Shift+i */
                    'KeyR':[2,4],/* (Cmd|Ctrl)+r */
                   }[rk[1]];okc?okc.every(m=>rk[3]!==m):true&&ev.preventDefault();
-        rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]);IN.KS[i].slice(-IN.KS_MAXLEN)});
+        rk.forEach((_,i)=>{
+                IN.KS[i].unshift(rk[i]);
+                IN.KS[i]=IN.KS[i].slice(0,IN.KS_MAXLEN)
+        });
         requestAnimationFrame(update);
     }
 };

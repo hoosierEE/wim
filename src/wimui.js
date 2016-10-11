@@ -24,7 +24,6 @@ const WIMUI={
             motion:'hjkl',
             edit:'oOpPrxX',
             insert:'aAiI',
-            escape:'',
             visual:'v',
             visual_line:'V',
             find_char:'fFtT',
@@ -33,11 +32,11 @@ const WIMUI={
             ascii:' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
         };
         let it={}; for(let s in atm){[...atm[s]].forEach(x=>it[x]?it[x].push(s):it[x]=[s]);}
+        it.Escape=['escape'];
         return this.atom=it;
     },
 
     chord:{
-        'ESC':{act:'escape',code:'Escape',mods:[-1]},
         'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
         'C-g':{act:'escape',code:'KeyG',mods:[2]},
         'C-d':{act:'motion',code:'KeyD',mods:[2]},
@@ -45,35 +44,53 @@ const WIMUI={
         'C-v':{act:'visual_block',code:'KeyV',mods:[2]},
     },
 
-    seq:{
-        'fd':{act:'escape'},
+    get seq(){/* {Seq:{Action,MinMilliseconds?}} */
+        delete this.seq;
+        let tsq={
+            'fd':{act:'escape',dt:500},
+            /* 'jk':{act:'escape'}, */
+        };
+        for(let i in tsq){tsq[i].rn=[...i].reverse().join('');}
+        return this.seq=tsq;
     },
 
     /* methods */
     /* NOTE input can contain: key chords, single keys, and mouse events. */
     handle_evt(input){
-        let ek=input.KS[0][0],/* most recently pressed key */
-            em=input.KS[3][0],/* most recent combination of modifier keys */
-            et=this.atom[ek]||[],/* type of most recently pressed key */
-            fd=input.KS[0],/* most recent <N=input.KS_MAXLEN> keys */
-            action='nop', fn, ok_chord={}, ok_seq=[];/* results */
+        let fd=input.KS[0], action='nop', fn, ok_chord={}, ok_seq;
+
+        /* Test input for chord. */
         for(let icc in this.chord){
             let i=this.chord[icc], eci=Array.from(input.KC).indexOf(i.code);
-            if(eci>-1 && (0>i.mods || i.mods.some(x=>x==em))){ok_chord=i; ok_chord.name=icc; break;}
-        }
-        for(let isq in this.seq){
-            let i=this.seq[isq], len=i.length;
-            if(fd.slice(0,len).reverse()==isq){console.log(`matched a sequence: ${isq}`)}
+            if(eci>-1 && (0>i.mods || i.mods.some(x=>x==input.KS[3][0]))){
+                ok_chord=i;
+                ok_chord.name=icc;
+                break;
+            }
         }
 
-        /* Check chords, then atoms for a valid next command. */
-        if(Object.keys(ok_chord).length){
+        /* Test input for sequence. */
+        let inseq=input.KS[0].join('');
+        for(let si in this.seq){
+            let i=this.seq[si];
+            if(inseq.startsWith(i.rn)){
+                if(!i.dt){ok_seq=i;}
+                else if(i.dt > input.KS[2].slice(0,si.length).reduce((a,b)=>a-b)){ok_seq=i;}
+                break;
+            }
+        }
+
+        if(Object.keys(ok_chord).length){/* chord? */
             if(fn=this.tbl[this.current_state][ok_chord.act]){action=ok_chord.act;}
             else{console.log(`chord (${ok_chord.name}) unexpected in state (${this.current_state})`);}
         }
-        else{
+        else if(ok_seq){/* sequence? */
+            if(fn=this.tbl[this.current_state][ok_seq.act]){action=ok_seq.act;}
+            else{console.log('seq ?');}
+        }
+        else{/* single key? */
+            let et=this.atom[input.KS[0][0]]||[];
             for(let i=0;i<et.length;++i){
-                console.log(et);
                 if(et.length && (fn=this.tbl[this.current_state][et[i]])){action=et[i]; break;}
             }
         }
@@ -83,11 +100,14 @@ const WIMUI={
         if(!action){fn=this.unexpected_event;}
 
         /* Compute next state. */
-        let next_state=fn.call(this,action); /* try */
-        if(!next_state){next_state=this.current_state;} /* fallback 1 */
-        if(!this.tbl[next_state]){next_state=this.unexpected_state(action,next_state);} /* fallback 2 */
+        //let next_state=fn.call(this,action);/* try */
+        let obj={};
+        let next_state=fn.call(this,obj);/* try */
+        if(!next_state){next_state=this.current_state;}/* fallback 1 */
+        if(!this.tbl[next_state]){next_state=this.unexpected_state(action,next_state);}/* fallback 2 */
 
         console.log(`state: ${next_state}`);
+        console.log(obj);
 
         this.current_state=next_state;
         /* TODO accumulate actual keys and, upon successful state change,
@@ -105,15 +125,15 @@ const WIMUI={
         return this.unexpected_event(e);
     },
 
-    get tbl(){/* {States:{Events()}} */
+    get tbl(){/* {State:{Event->State}} */
         delete this.tbl;
-        this.tbl={
+        let tbl={
 
             normal:{
                 mult_0(e){/*this.multiplier_str[0]+=e.val;*/ return 'mult_N';},
                 verb(e){return 'verb';},
                 text_object(e){/* move_cursor_to_object_if_possible */ return 'normal';},
-                motion(e){/* move_cursor_by_motion_if_possible */ return 'normal';},
+                motion(e){/* move_cursor_by_motion_if_possible */ console.log(e);return 'normal';},
                 visual(e){return 'visual';},
                 visual_line(e){return 'visual_line';},
                 visual_block(e){return 'visual_block';},
@@ -188,8 +208,8 @@ const WIMUI={
                 text_object(e){/* go(object) */ return 'visual_line';},
                 motion(e){/* go(motion) */ return 'visual_line';},
                 visual(e){return 'visual';},
-                visual_line(e){return 'visual_line';},
-                visual_block(e){return 'normal';},
+                visual_line(e){return 'normal';},
+                visual_block(e){return 'visual_block';},
                 find_char(e){return 'find_char_visual_line';},
                 insert(e){/* if(AIS) */ return 'insert_block';},
                 escape(e){return 'normal';},
@@ -258,7 +278,7 @@ const WIMUI={
             },
 
         };
-        this.tbl.mult_0=this.tbl.mult_N; /* mult_0 is a copy of mult_N */
-        return this.tbl;
+        tbl.mult_0=tbl.mult_N; /* mult_0 is a copy of mult_N */
+        return this.tbl=tbl;
     },
 };
