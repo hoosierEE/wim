@@ -48,6 +48,9 @@ const WIMUI={
         delete this.seq;
         let tsq={
             'fd':{act:'escape',dt:500},
+            'cs':{act:'surround'},
+            'ds':{act:'surround'},
+            'ys':{act:'surround'},
             /* 'jk':{act:'escape'}, */
         };
         for(let i in tsq){tsq[i].rn=[...i].reverse().join('');}
@@ -86,7 +89,7 @@ const WIMUI={
         }
         else if(ok_seq){/* sequence? */
             if(fn=this.st[this.current_state][ok_seq.act]){action=ok_seq.act;}
-            else{console.log('seq ?');}
+            else{console.log(`seq (${[...ok_seq.rn].reverse().join('')}) has no associated action`);}
         }
         else{/* single key? */
             let et=this.atom[input.KS[0][0]]||[];
