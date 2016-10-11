@@ -81,17 +81,17 @@ const WIMUI={
         }
 
         if(Object.keys(ok_chord).length){/* chord? */
-            if(fn=this.tbl[this.current_state][ok_chord.act]){action=ok_chord.act;}
+            if(fn=this.st[this.current_state][ok_chord.act]){action=ok_chord.act;}
             else{console.log(`chord (${ok_chord.name}) unexpected in state (${this.current_state})`);}
         }
         else if(ok_seq){/* sequence? */
-            if(fn=this.tbl[this.current_state][ok_seq.act]){action=ok_seq.act;}
+            if(fn=this.st[this.current_state][ok_seq.act]){action=ok_seq.act;}
             else{console.log('seq ?');}
         }
         else{/* single key? */
             let et=this.atom[input.KS[0][0]]||[];
             for(let i=0;i<et.length;++i){
-                if(et.length && (fn=this.tbl[this.current_state][et[i]])){action=et[i]; break;}
+                if(et.length && (fn=this.st[this.current_state][et[i]])){action=et[i]; break;}
             }
         }
 
@@ -100,14 +100,12 @@ const WIMUI={
         if(!action){fn=this.unexpected_event;}
 
         /* Compute next state. */
-        //let next_state=fn.call(this,action);/* try */
-        let obj={};
-        let next_state=fn.call(this,obj);/* try */
+        let obj={}, next_state=fn.call(this,obj);/* try */
         if(!next_state){next_state=this.current_state;}/* fallback 1 */
-        if(!this.tbl[next_state]){next_state=this.unexpected_state(action,next_state);}/* fallback 2 */
+        if(!this.st[next_state]){next_state=this.unexpected_state(action,next_state);}/* fallback 2 */
 
         console.log(`state: ${next_state}`);
-        console.log(obj);
+        //console.log(obj);
 
         this.current_state=next_state;
         /* TODO accumulate actual keys and, upon successful state change,
@@ -125,9 +123,9 @@ const WIMUI={
         return this.unexpected_event(e);
     },
 
-    get tbl(){/* {State:{Event->State}} */
-        delete this.tbl;
-        let tbl={
+    get st(){/* {State:{Event->State}} */
+        delete this.st;
+        let st={
 
             normal:{
                 mult_0(e){/*this.multiplier_str[0]+=e.val;*/ return 'mult_N';},
@@ -278,7 +276,7 @@ const WIMUI={
             },
 
         };
-        tbl.mult_0=tbl.mult_N; /* mult_0 is a copy of mult_N */
-        return this.tbl=tbl;
+        st.mult_0=st.mult_N; /* mult_0 is a copy of mult_N */
+        return this.st=st;
     },
 };
