@@ -11,8 +11,7 @@ const ctx=document.getElementById('c').getContext('2d');
    render : Model -> IO() */
 const render=(lines)=>{
     ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
-    let la=lines.split('\n'),pos=0;
-    la.forEach(l=>{pos+=20; ctx.fillText(l,20,pos);});
+    let pos=0; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,5.5,pos+=20);});
 };
 
 /* update : AnyEvent -> Action */
@@ -50,13 +49,22 @@ window.addEventListener('keydown',e=>key_handler(e,1));
 window.addEventListener('keyup',e=>key_handler(e,0));
 
 /* Window -- load, resize */
-const pixel_ratio_fix=()=>{
+const pixel_ratio_fix=(s)=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
     [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
     [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
     /* Set font size AFTER modifying canvas! */
-    ctx.font='16px "Source Code Pro for Powerline"'; //ctx.font='16px monospace';
+    ctx.font='18px "Source Code Pro for Powerline"'; //ctx.font='16px monospace';
+    ctx.scale(1/dpr,1/dpr);
+    render(s);
     ctx.scale(dpr,dpr);
 };
-window.addEventListener('load',()=>{pixel_ratio_fix(); render('Hello\n   world!');});
-window.addEventListener('resize',pixel_ratio_fix);
+let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. "
+
+window.addEventListener('load',()=>{
+    pixel_ratio_fix(str);// render(str);
+});
+window.addEventListener('resize',()=>{
+    pixel_ratio_fix(str); render(str);
+});
+
