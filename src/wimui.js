@@ -133,8 +133,8 @@ const WIMUI={
             normal:{
                 mult_0(e){/*this.multiplier_str[0]+=e.val;*/ return 'mult_N';},
                 verb(e){return 'verb';},
-                text_object(e){/* move_cursor_to_object_if_possible */ return 'normal';},
-                motion(e){/* move_cursor_by_motion_if_possible */ console.log(e);return 'normal';},
+                text_object(e){/* move_cursor_to_object_if_possible */return 'normal';},
+                motion(e){/* move_cursor_by_motion_if_possible */return 'normal';},
                 visual(e){return 'visual';},
                 visual_line(e){return 'visual_line';},
                 visual_block(e){return 'visual_block';},
