@@ -7,12 +7,12 @@
  */
 const WIMUI=()=>{
     /* simple objects */
+    let current_state='normal';
     const multiplier=1,
           multiplier_str=['',''],
           get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1)},
           reset_multiplier=()=>{multiplier=1; multiplier_str=['',''];},
           initial_state='normal';
-    let current_state='normal';
 
     const chord={
         'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
@@ -234,13 +234,13 @@ const WIMUI=()=>{
             }
         }
 
-        const tf=(e,o,msg)=>{
-            if(fn=o.st[o.current_state][e.act]){action=e.act;}
+        const tf=(e,msg)=>{
+            if(fn=st[current_state][e.act]){action=e.act;}
             else{console.log(msg);}
         };
 
-        if(Object.keys(ok_chord).length){/* chord? */ tf(ok_chord,this,'bad chord');}
-        else if(ok_seq){/* sequence? */ tf(ok_seq,this,'bad sequence');}
+        if(Object.keys(ok_chord).length){/* chord? */ tf(ok_chord,'bad chord');}
+        else if(ok_seq){/* sequence? */ tf(ok_seq,'bad sequence');}
         else{/* single key? */
             let et=atom[input.KS[0][0]]||[];
             for(let i=0;i<et.length;++i){
