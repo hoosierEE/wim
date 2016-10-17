@@ -1,18 +1,18 @@
 /* Vim-sytle UI
-   The state machine design in this class is taken directly from here (Thanks IBM!):
-   http://www.ibm.com/developerworks/library/wa-finitemach1/
+ The state machine design in this class is taken directly from here (Thanks IBM!):
+ http://www.ibm.com/developerworks/library/wa-finitemach1/
 
-   Offical WIMUI state transition table is here (x indicates disallowed state):
-   https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
-*/
+ Offical WIMUI state transition table is here (x indicates disallowed state):
+ https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
+ */
 const WIMUI=()=>{
     /* simple objects */
     const multiplier=1,
           multiplier_str=['',''],
           get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1)},
           reset_multiplier=()=>{multiplier=1; multiplier_str=['',''];},
-          initial_state='normal',
-          current_state='normal';
+          initial_state='normal';
+    let current_state='normal';
 
     const chord={
         'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
@@ -60,7 +60,7 @@ const WIMUI=()=>{
     const st=(()=>{/* {State:{Event->State}} */
         let t={
             normal:{
-                mult_0(e){/*this.multiplier_str[0]+=e.val;*/ return 'mult_N';},
+                mult_0(e){/*multiplier_str[0]+=e.val;*/ return 'mult_N';},
                 verb(e){return 'verb';},
                 text_object(e){/* move_cursor_to_object_if_possible */return 'normal';},
                 motion(e){/* move_cursor_by_motion_if_possible */return 'normal';},
@@ -76,14 +76,14 @@ const WIMUI=()=>{
             },
 
             mult_N:{
-                mult_N(e){/*this.multiplier_str[0]+=e.val; */ return 'mult_N';},
-                verb(e){/*this.multiplier_str[0]*=parseInt(this.multiplier_str[0],10); */ return 'verb';},
+                mult_N(e){/*multiplier_str[0]+=e.val; */ return 'mult_N';},
+                verb(e){/*multiplier_str[0]*=parseInt(multiplier_str[0],10); */ return 'verb';},
                 text_object(e){/* go(e) */ return 'normal';},
                 motion(e){/* go(e) */ return 'normal';},
                 visual(e){return 'visual';},
                 visual_line(e){return 'visual_line';},
                 visual_block(e){return 'visual_block';},
-                find_char(e){/*this.multiplier_str[1]+=e.val; */ return 'find_char';},
+                find_char(e){/*multiplier_str[1]+=e.val; */ return 'find_char';},
                 insert(e){return 'insert_N';},
                 escape(e){return 'normal';},
                 edit(e){return 'normal';},
@@ -210,12 +210,12 @@ const WIMUI=()=>{
         return t;
     })();
 
-    const handle_evt=(input)=>{
+    const update=(input)=>{
         let fd=input.KS[0], action='nop', fn, ok_chord={}, ok_seq;
 
         /* Test input for chord. */
-        for(let icc in this.chord){
-            let i=this.chord[icc], eci=Array.from(input.KC).indexOf(i.code);
+        for(let icc in chord){
+            let i=chord[icc], eci=Array.from(input.KC).indexOf(i.code);
             if(eci>-1 && (0>i.mods || i.mods.some(x=>x==input.KS[3][0]))){
                 ok_chord=i;
                 ok_chord.name=icc;
@@ -224,24 +224,26 @@ const WIMUI=()=>{
         }
 
         /* Test input for sequence. */
-        let inseq=input.KS[0].join('');
-        for(let si in this.seq){
-            let i=this.seq[si];
-            if(inseq.startsWith(i.rn)){
+        for(let si in seq){
+            let i=seq[si];
+            if(input.KS[0].join('').startsWith(i.rn)){
+                console.log(i);
                 if(!i.dt){ok_seq=i;}
                 else if(i.dt > input.KS[2].slice(0,si.length).reduce((a,b)=>a-b)){ok_seq=i;}
                 break;
             }
         }
 
-        const tf=(e,o,msg)=>{/* Try function */
+        const tf=(e,o,msg)=>{
             if(fn=o.st[o.current_state][e.act]){action=e.act;}
             else{console.log(msg);}
         };
+
         if(Object.keys(ok_chord).length){/* chord? */ tf(ok_chord,this,'bad chord');}
         else if(ok_seq){/* sequence? */ tf(ok_seq,this,'bad sequence');}
         else{/* single key? */
-            let et=atom[input.KS[0][0]]||[]; for(let i=0;i<et.length;++i){
+            let et=atom[input.KS[0][0]]||[];
+            for(let i=0;i<et.length;++i){
                 if(et.length && (fn=st[current_state][et[i]])){action=et[i]; break;}
             }
         }
@@ -255,14 +257,14 @@ const WIMUI=()=>{
         if(!next_state){next_state=current_state;}/* fallback 1 */
         if(!st[next_state]){next_state=unexpected_state(action,next_state);}/* fallback 2 */
         console.log(`state: ${next_state}`);
-        this.current_state=next_state;
+        current_state=next_state;
         /* TODO accumulate actual keys and, upon successful state change,
-           export the key sequence to external handling function. */
+         export the key sequence to external handling function. */
     };
 
     const unexpected_event=(e)=>{
         console.log(`unexpected event: ${e}`);
-        this.reset_multiplier();
+        reset_multiplier();
         return o.initial_state;
     };
 
@@ -271,5 +273,5 @@ const WIMUI=()=>{
         return unexpected_event(e);
     };
 
-    return ({update:handle_evt});
+    return ({update});
 };
