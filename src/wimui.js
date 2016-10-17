@@ -1,14 +1,14 @@
 /* Vim-sytle UI
-   The state machine design in this class is taken directly from here (Thanks IBM!):
-   http://www.ibm.com/developerworks/library/wa-finitemach1/
+ The state machine design in this class is taken directly from here (Thanks IBM!):
+ http://www.ibm.com/developerworks/library/wa-finitemach1/
 
-   Offical WIMUI state transition table is here (x indicates disallowed state):
-   https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
-*/
+ Offical WIMUI state transition table is here (x indicates disallowed state):
+ https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
+ */
 const WIMUI={
     multiplier:1,
     multiplier_str:['',''],
-    get_multiplier(multstr){/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1)},
+    get_multiplier(multstr){/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1);},
     reset_multiplier(){this.multiplier=1; this.multiplier_str=['',''];},
     initial_state:'normal',
     current_state:'normal',
@@ -48,6 +48,7 @@ const WIMUI={
         delete this.seq;
         let tsq={
             'fd':{act:'escape',dt:500},
+            /* TODO I think 'surround-mode' would more properly reside in the state\action table */
             'cs':{act:'surround'},
             'ds':{act:'surround'},
             'ys':{act:'surround'},
@@ -84,11 +85,11 @@ const WIMUI={
         }
 
         if(Object.keys(ok_chord).length){/* chord? */
-            if(fn=this.st[this.current_state][ok_chord.act]){action=ok_chord.act;}
+            if((fn=this.st[this.current_state][ok_chord.act])){action=ok_chord.act;}
             else{console.log(`chord (${ok_chord.name}) unexpected in state (${this.current_state})`);}
         }
         else if(ok_seq){/* sequence? */
-            if(fn=this.st[this.current_state][ok_seq.act]){action=ok_seq.act;}
+            if((fn=this.st[this.current_state][ok_seq.act])){action=ok_seq.act;}
             else{console.log(`seq (${[...ok_seq.rn].reverse().join('')}) has no associated action`);}
         }
         else{/* single key? */
@@ -108,11 +109,10 @@ const WIMUI={
         if(!this.st[next_state]){next_state=this.unexpected_state(action,next_state);}/* fallback 2 */
 
         console.log(`state: ${next_state}`);
-        //console.log(obj);
 
         this.current_state=next_state;
-        /* TODO accumulate actual keys and, upon successful state change,
-           export the key sequence to external handling function. */
+        /* TODO accumulate actual keys and - upon successful state change -
+         export the key sequence to external handling function. */
     },
 
     unexpected_event(e){
@@ -129,7 +129,6 @@ const WIMUI={
     get st(){/* {State:{Event->State}} */
         delete this.st;
         let st={
-
             normal:{
                 mult_0(e){/*this.multiplier_str[0]+=e.val;*/ return 'mult_N';},
                 verb(e){return 'verb';},
@@ -234,28 +233,28 @@ const WIMUI={
 
             /* TODO implement ascii(e) */
             find_char:{
-                escape(e){return 'normal'},
+                escape(e){return 'normal';},
                 ascii(e){/* go(range) */ return 'normal';},
             },
 
             find_char_visual:{
-                escape(e){return 'normal'},
+                escape(e){return 'normal';},
                 ascii(e){/* go(range) */ return 'visual';},
             },
 
             find_char_visual_line:{
-                escape(e){return 'normal'},
+                escape(e){return 'normal';},
                 ascii(e){/* go(range) */ return 'visual_line';},
             },
 
             find_char_visual_block:{
-                escape(e){return 'normal'},
+                escape(e){return 'normal';},
                 ascii(e){/* go(range) */ return 'visual_block';},
             },
 
             find_char_verb:{
-                escape(e){return 'normal'},
-                ascii(e){/* if e is found do(range) */ return 'normal'},
+                escape(e){return 'normal';},
+                ascii(e){/* if e is found do(range) */ return 'normal';},
             },
 
             insert:{
@@ -277,7 +276,6 @@ const WIMUI={
                 escape(e){/* put(e) in other lines */ return 'normal';},
                 ascii(e){/* put(e) */ return 'insert_block_N';},
             },
-
         };
         st.mult_0=st.mult_N; /* mult_0 is a copy of mult_N */
         return this.st=st;

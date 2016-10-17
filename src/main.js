@@ -1,13 +1,13 @@
 /* main.js -- Entry point; wraps the browser.
-   All I/O goes through here:
-   - persistent state
-   - keyboard/mouse input
-   - drawing to screen
-   - config file load/save */
+ All I/O goes through here:
+ - persistent state
+ - keyboard/mouse input
+ - drawing to screen
+ - config file load/save */
 const ctx=document.getElementById('c').getContext('2d');
 
 /* render : String -> IO()
-   TODO change to (render : Model -> IO()) */
+ TODO change to (render : Model -> IO()) */
 const render=(lines)=>{
     ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
     let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
@@ -15,8 +15,7 @@ const render=(lines)=>{
 
 /* update : AnyEvent -> Action */
 /* update : Model -> Model */
-const update=(performance_now)=>{
-    //console.log(Array.from(IN.KC));
+const update=(perf_now)=>{
     WIMUI.handle_evt(IN);
 };
 
@@ -39,7 +38,7 @@ const key_handler=(ev)=>{
               pd={'KeyI':[5,10],/* Ctrl-I or Cmd-Opt-i */
                   'KeyR':[2,4],/* Ctrl-r or Cmd-r */
                  }[rk[1]];pd?pd.every(m=>rk[3]!==m):true&&ev.preventDefault();
-        rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]); IN.KS[i]=IN.KS[i].slice(0,IN.KS_MAXLEN)});
+        rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]); IN.KS[i]=IN.KS[i].slice(0,IN.KS_MAXLEN);});
         requestAnimationFrame(update);
     }
 };
@@ -56,7 +55,7 @@ const pixel_ratio_fix=(s)=>{
     ctx.font=(9*dpr)+'px "Source Code Pro for Powerline"';
     ctx.scale(dpr,dpr);
 };
-let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. "
+let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. ";
 
 window.addEventListener('load',()=>{
     pixel_ratio_fix(str);
