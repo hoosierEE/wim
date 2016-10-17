@@ -5,48 +5,26 @@
    Offical WIMUI state transition table is here (x indicates disallowed state):
    https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
 */
-const WIMUI={
-    multiplier:1,
-    multiplier_str:['',''],
-    get_multiplier(multstr){/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1)},
-    reset_multiplier(){this.multiplier=1; this.multiplier_str=['',''];},
-    initial_state:'normal',
-    current_state:'normal',
+const WIMUI=()=>{
+    /* simple objects */
+    const multiplier=1,
+          multiplier_str=['',''],
+          get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1)},
+          reset_multiplier=()=>{multiplier=1; multiplier_str=['',''];},
+          initial_state='normal',
+          current_state='normal';
 
-    get atom(){/* {Char:[Type]} */
-        delete this.atom;
-        let atm={/* {Type:[Char]} */
-            mult_0:'123456789',
-            mult_N:'0123456789',
-            verb:'cdy',
-            modifier:'ai',
-            text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
-            motion:'hjkl',
-            edit:'oOpPrxX',
-            insert:'aAiI',
-            visual:'v',
-            visual_line:'V',
-            find_char:'fFtT',
-            undo:'u',
-            repeat:'.',
-            ascii:' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
-        };
-        let it={}; for(let s in atm){[...atm[s]].forEach(x=>it[x]?it[x].push(s):it[x]=[s]);}
-        it.Escape=['escape'];
-        return this.atom=it;
-    },
-
-    chord:{
+    const chord={
         'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
         'C-g':{act:'escape',code:'KeyG',mods:[2]},
         'C-d':{act:'motion',code:'KeyD',mods:[2]},
         'C-u':{act:'motion',code:'KeyU',mods:[2]},
         'C-v':{act:'visual_block',code:'KeyV',mods:[2]},
-    },
+    };
 
-    get seq(){/* {Seq:{Action,MinMilliseconds?}} */
-        delete this.seq;
-        let tsq={
+    /* More complex objects - transformed before use. */
+    const seq=(()=>{
+        let tsq={/* {Seq:{Action,MinMilliseconds?}} */
             'fd':{act:'escape',dt:500},
             'cs':{act:'surround'},
             'ds':{act:'surround'},
@@ -54,82 +32,33 @@ const WIMUI={
             /* 'jk':{act:'escape'}, */
         };
         for(let i in tsq){tsq[i].rn=[...i].reverse().join('');}
-        return this.seq=tsq;
-    },
+        return tsq;
+    })();
 
-    /* methods */
-    /* NOTE input can contain: key chords, single keys, and mouse events. */
-    handle_evt(input){
-        let fd=input.KS[0], action='nop', fn, ok_chord={}, ok_seq;
+    const atom=(()=>{/* {Char:[Type]} */
+        let xs={/* {Type:[Char]} */
+            edit:'oOpPrxX',
+            find_char:'fFtT',
+            insert:'aAiI',
+            modifier:'ai',
+            motion:'hjkl',
+            mult_0:'123456789',
+            mult_N:'0123456789',
+            repeat:'.',
+            text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
+            undo:'u',
+            verb:'cdy',
+            visual:'v',
+            visual_line:'V',
+        };
+        let as='';for(let i=32;i<127;++i){as+=String.fromCharCode(i);} xs.ascii=as;
+        let t={};for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}/* invert xs table */
+        t.Escape=['escape'];
+        return t;
+    })();
 
-        /* Test input for chord. */
-        for(let icc in this.chord){
-            let i=this.chord[icc], eci=Array.from(input.KC).indexOf(i.code);
-            if(eci>-1 && (0>i.mods || i.mods.some(x=>x==input.KS[3][0]))){
-                ok_chord=i;
-                ok_chord.name=icc;
-                break;
-            }
-        }
-
-        /* Test input for sequence. */
-        let inseq=input.KS[0].join('');
-        for(let si in this.seq){
-            let i=this.seq[si];
-            if(inseq.startsWith(i.rn)){
-                if(!i.dt){ok_seq=i;}
-                else if(i.dt > input.KS[2].slice(0,si.length).reduce((a,b)=>a-b)){ok_seq=i;}
-                break;
-            }
-        }
-
-        if(Object.keys(ok_chord).length){/* chord? */
-            if(fn=this.st[this.current_state][ok_chord.act]){action=ok_chord.act;}
-            else{console.log(`chord (${ok_chord.name}) unexpected in state (${this.current_state})`);}
-        }
-        else if(ok_seq){/* sequence? */
-            if(fn=this.st[this.current_state][ok_seq.act]){action=ok_seq.act;}
-            else{console.log(`seq (${[...ok_seq.rn].reverse().join('')}) has no associated action`);}
-        }
-        else{/* single key? */
-            let et=this.atom[input.KS[0][0]]||[];
-            for(let i=0;i<et.length;++i){
-                if(et.length && (fn=this.st[this.current_state][et[i]])){action=et[i]; break;}
-            }
-        }
-
-        /* Action or nop? */
-        if(action==='nop'){return;}
-        if(!action){fn=this.unexpected_event;}
-
-        /* Compute next state. */
-        let obj={}, next_state=fn.call(this,obj);/* try */
-        if(!next_state){next_state=this.current_state;}/* fallback 1 */
-        if(!this.st[next_state]){next_state=this.unexpected_state(action,next_state);}/* fallback 2 */
-
-        console.log(`state: ${next_state}`);
-        //console.log(obj);
-
-        this.current_state=next_state;
-        /* TODO accumulate actual keys and, upon successful state change,
-           export the key sequence to external handling function. */
-    },
-
-    unexpected_event(e){
-        console.log(`unexpected event: ${e}`);
-        this.reset_multiplier();
-        return this.initial_state;
-    },
-
-    unexpected_state(e,s){
-        console.log(`unexpected state: ${e}`);
-        return this.unexpected_event(e);
-    },
-
-    get st(){/* {State:{Event->State}} */
-        delete this.st;
-        let st={
-
+    const st=(()=>{/* {State:{Event->State}} */
+        let t={
             normal:{
                 mult_0(e){/*this.multiplier_str[0]+=e.val;*/ return 'mult_N';},
                 verb(e){return 'verb';},
@@ -232,7 +161,6 @@ const WIMUI={
                 edit(e){/* edit() */ return 'normal';},
             },
 
-            /* TODO implement ascii(e) */
             find_char:{
                 escape(e){return 'normal'},
                 ascii(e){/* go(range) */ return 'normal';},
@@ -277,9 +205,71 @@ const WIMUI={
                 escape(e){/* put(e) in other lines */ return 'normal';},
                 ascii(e){/* put(e) */ return 'insert_block_N';},
             },
-
         };
-        st.mult_0=st.mult_N; /* mult_0 is a copy of mult_N */
-        return this.st=st;
-    },
+        t.mult_0=t.mult_N;
+        return t;
+    })();
+
+    const handle_evt=(input)=>{
+        let fd=input.KS[0], action='nop', fn, ok_chord={}, ok_seq;
+
+        /* Test input for chord. */
+        for(let icc in this.chord){
+            let i=this.chord[icc], eci=Array.from(input.KC).indexOf(i.code);
+            if(eci>-1 && (0>i.mods || i.mods.some(x=>x==input.KS[3][0]))){
+                ok_chord=i;
+                ok_chord.name=icc;
+                break;
+            }
+        }
+
+        /* Test input for sequence. */
+        let inseq=input.KS[0].join('');
+        for(let si in this.seq){
+            let i=this.seq[si];
+            if(inseq.startsWith(i.rn)){
+                if(!i.dt){ok_seq=i;}
+                else if(i.dt > input.KS[2].slice(0,si.length).reduce((a,b)=>a-b)){ok_seq=i;}
+                break;
+            }
+        }
+
+        const tf=(e,o,msg)=>{/* Try function */
+            if(fn=o.st[o.current_state][e.act]){action=e.act;}
+            else{console.log(msg);}
+        };
+        if(Object.keys(ok_chord).length){/* chord? */ tf(ok_chord,this,'bad chord');}
+        else if(ok_seq){/* sequence? */ tf(ok_seq,this,'bad sequence');}
+        else{/* single key? */
+            let et=atom[input.KS[0][0]]||[]; for(let i=0;i<et.length;++i){
+                if(et.length && (fn=st[current_state][et[i]])){action=et[i]; break;}
+            }
+        }
+
+        /* Action or nop? */
+        if(action==='nop'){return;}
+        if(!action){fn=unexpected_event;}
+
+        /* Compute next state. */
+        let obj={}, next_state=fn.call(this,obj);/* try */
+        if(!next_state){next_state=current_state;}/* fallback 1 */
+        if(!st[next_state]){next_state=unexpected_state(action,next_state);}/* fallback 2 */
+        console.log(`state: ${next_state}`);
+        this.current_state=next_state;
+        /* TODO accumulate actual keys and, upon successful state change,
+           export the key sequence to external handling function. */
+    };
+
+    const unexpected_event=(e)=>{
+        console.log(`unexpected event: ${e}`);
+        this.reset_multiplier();
+        return o.initial_state;
+    };
+
+    const unexpected_state=(e,s)=>{
+        console.log(`unexpected state: ${e}`);
+        return unexpected_event(e);
+    };
+
+    return ({update:handle_evt});
 };

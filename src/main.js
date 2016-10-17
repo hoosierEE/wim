@@ -13,11 +13,13 @@ const render=(lines)=>{
     let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
 };
 
+let wui=WIMUI();
+
 /* update : AnyEvent -> Action */
 /* update : Model -> Model */
 const update=(performance_now)=>{
     //console.log(Array.from(IN.KC));
-    WIMUI.handle_evt(IN);
+    wui.update(IN);
 };
 
 
