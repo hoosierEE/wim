@@ -1,4 +1,5 @@
-/* Vim-sytle UI
+/**
+ Vim-sytle UI
  The state machine design in this class is taken directly from here (Thanks IBM!):
  http://www.ibm.com/developerworks/library/wa-finitemach1/
 
@@ -19,19 +20,14 @@ const WIMUI=()=>{
         'C-g':{act:'escape',code:'KeyG',mods:[2]},
         'C-d':{act:'motion',code:'KeyD',mods:[2]},
         'C-u':{act:'motion',code:'KeyU',mods:[2]},
-        'C-v':{act:'visual_block',code:'KeyV',mods:[2]},
+        'C-v':{act:'visual_block',code:'KeyV',mods:[2]}
     };
 
-    /* More complex objects - transformed before use. */
     const seq=(()=>{
-        let tsq={/* {Seq:{Action,MinMilliseconds?}} */
-            'fd':{act:'escape',dt:500},
-            'cs':{act:'surround'},
-            'ds':{act:'surround'},
-            'ys':{act:'surround'},
+        let tsq={/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
+            'fd':{act:'escape',rn:'df',dt:500}
             /* 'jk':{act:'escape'}, */
         };
-        for(let i in tsq){tsq[i].rn=[...i].reverse().join('');}
         return tsq;
     })();
 
@@ -49,7 +45,7 @@ const WIMUI=()=>{
             undo:'u',
             verb:'cdy',
             visual:'v',
-            visual_line:'V',
+            visual_line:'V'
         };
         let as='';for(let i=32;i<127;++i){as+=String.fromCharCode(i);} xs.ascii=as;
         let t={};for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}/* invert xs table */
@@ -72,7 +68,7 @@ const WIMUI=()=>{
                 escape(e){return 'normal';},
                 edit(e){/* switch(e){...} */ return 'normal';},
                 undo(e){return 'normal';},
-                repeat(e){/* repeat_last_thing */ return 'normal';},
+                repeat(e){/* repeat_last_thing */ return 'normal';}
             },
 
             mult_N:{
@@ -88,7 +84,7 @@ const WIMUI=()=>{
                 escape(e){return 'normal';},
                 edit(e){return 'normal';},
                 undo(e){return 'normal';},
-                repeat(e){return 'normal';},
+                repeat(e){return 'normal';}
             },
 
             verb:{
@@ -99,7 +95,7 @@ const WIMUI=()=>{
                 text_object(e){/* go(object) */ return 'normal';},
                 motion(e){/* go(motion) */ return 'normal';},
                 find_char(e){return 'find_char_verb';},
-                escape(e){return 'normal';},
+                escape(e){return 'normal';}
             },
 
             post_verb:{
@@ -108,12 +104,12 @@ const WIMUI=()=>{
                 text_object(e){/* do(object) */ return 'normal';},
                 motion(e){/* do(motion) */ return 'normal';},
                 find_char(e){return 'find_char_verb';},
-                escape(e){return 'normal';},
+                escape(e){return 'normal';}
             },
 
             modifier:{
                 text_object(e){/* do(object) */ return 'normal';},
-                motion(e){/* do(motion) */ return 'normal';},
+                motion(e){/* do(motion) */ return 'normal';}
             },
 
             visual:{
@@ -128,7 +124,7 @@ const WIMUI=()=>{
                 find_char(e){return 'find_char_visual';},
                 insert(e){return 'insert';},
                 escape(e){return 'normal';},
-                edit(e){/* edit() */ return 'normal';},
+                edit(e){/* edit() */ return 'normal';}
             },
 
             visual_line:{
@@ -143,7 +139,7 @@ const WIMUI=()=>{
                 find_char(e){return 'find_char_visual_line';},
                 insert(e){/* if(AIS) */ return 'insert_block';},
                 escape(e){return 'normal';},
-                edit(e){/* edit() */ return 'normal';},
+                edit(e){/* edit() */ return 'normal';}
             },
 
             visual_block:{
@@ -158,53 +154,53 @@ const WIMUI=()=>{
                 find_char(e){return 'find_char_visual_block';},
                 insert(e){/* if(AIS) */ return 'insert_block';},
                 escape(e){return 'normal';},
-                edit(e){/* edit() */ return 'normal';},
+                edit(e){/* edit() */ return 'normal';}
             },
 
             find_char:{
-                escape(e){return 'normal'},
-                ascii(e){/* go(range) */ return 'normal';},
+                escape(e){return 'normal';},
+                ascii(e){/* go(range) */ return 'normal';}
             },
 
             find_char_visual:{
-                escape(e){return 'normal'},
-                ascii(e){/* go(range) */ return 'visual';},
+                escape(e){return 'normal';},
+                ascii(e){/* go(range) */ return 'visual';}
             },
 
             find_char_visual_line:{
-                escape(e){return 'normal'},
-                ascii(e){/* go(range) */ return 'visual_line';},
+                escape(e){return 'normal';},
+                ascii(e){/* go(range) */ return 'visual_line';}
             },
 
             find_char_visual_block:{
-                escape(e){return 'normal'},
-                ascii(e){/* go(range) */ return 'visual_block';},
+                escape(e){return 'normal';},
+                ascii(e){/* go(range) */ return 'visual_block';}
             },
 
             find_char_verb:{
-                escape(e){return 'normal'},
-                ascii(e){/* if e is found do(range) */ return 'normal'},
+                escape(e){return 'normal';},
+                ascii(e){/* if e is found do(range) */ return 'normal';}
             },
 
             insert:{
                 escape(e){return 'normal';},
-                ascii(e){/* put(e) */ return 'insert';},
+                ascii(e){/* put(e) */ return 'insert';}
             },
 
             insert_N:{
                 escape(e){/* put(e) in other lines */ return 'normal';},
-                ascii(e){/* put(e) */ return 'insert_N';},
+                ascii(e){/* put(e) */ return 'insert_N';}
             },
 
             insert_block:{
                 escape(e){/* put(e) in other lines */ return 'normal';},
-                ascii(e){/* put(e) */ return 'insert_block';},
+                ascii(e){/* put(e) */ return 'insert_block';}
             },
 
             insert_block_N:{
                 escape(e){/* put(e) in other lines */ return 'normal';},
-                ascii(e){/* put(e) */ return 'insert_block_N';},
-            },
+                ascii(e){/* put(e) */ return 'insert_block_N';}
+            }
         };
         t.mult_0=t.mult_N;
         return t;
@@ -214,28 +210,27 @@ const WIMUI=()=>{
         let fd=input.KS[0], action='nop', fn, ok_chord={}, ok_seq;
 
         /* Test input for chord. */
-        for(let icc in chord){
-            let i=chord[icc], eci=Array.from(input.KC).indexOf(i.code);
-            if(eci>-1 && (0>i.mods || i.mods.some(x=>x==input.KS[3][0]))){
+        for(let x in chord){
+            let i=chord[x];
+            if((Array.from(input.KC).indexOf(i.code)>-1) &&
+               (0>i.mods || i.mods.some(y=>y==input.KS[3][0]))){
                 ok_chord=i;
-                ok_chord.name=icc;
+                ok_chord.name=x;
                 break;
             }
         }
 
         /* Test input for sequence. */
-        for(let si in seq){
-            let i=seq[si];
+        for(let x in seq){
+            let i=seq[x];
             if(input.KS[0].join('').startsWith(i.rn)){
-                console.log(i);
-                if(!i.dt){ok_seq=i;}
-                else if(i.dt > input.KS[2].slice(0,si.length).reduce((a,b)=>a-b)){ok_seq=i;}
+                ok_seq=(!i.dt)?i:(i.dt>input.KS[2].slice(0,x.length).reduce((a,b)=>a-b))?i:null;
                 break;
             }
         }
 
         const tf=(e,msg)=>{
-            if(fn=st[current_state][e.act]){action=e.act;}
+            if((fn=st[current_state][e.act])){action=e.act;}
             else{console.log(msg);}
         };
 
@@ -256,10 +251,12 @@ const WIMUI=()=>{
         let obj={}, next_state=fn.call(this,obj);/* try */
         if(!next_state){next_state=current_state;}/* fallback 1 */
         if(!st[next_state]){next_state=unexpected_state(action,next_state);}/* fallback 2 */
-        console.log(`state: ${next_state}`);
-        current_state=next_state;
+
+        /* TODO actual output */
         /* TODO accumulate actual keys and, upon successful state change,
          export the key sequence to external handling function. */
+        console.log(`state: ${next_state}`);
+        current_state=next_state;/* prepare for next `update` */
     };
 
     const unexpected_event=(e)=>{
