@@ -1,5 +1,4 @@
-/**
- Vim-sytle UI
+/* Vim-sytle UI
  The state machine design in this class is taken directly from here (Thanks IBM!):
  http://www.ibm.com/developerworks/library/wa-finitemach1/
 
@@ -15,18 +14,23 @@ const WIMUI=()=>{
           reset_multiplier=()=>{multiplier=1; multiplier_str=['',''];},
           initial_state='normal';
 
+    /* State machine tries to match: Chords, then Sequences, then Atoms. */
     const chord={
         'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
         'C-g':{act:'escape',code:'KeyG',mods:[2]},
         'C-d':{act:'motion',code:'KeyD',mods:[2]},
         'C-u':{act:'motion',code:'KeyU',mods:[2]},
-        'C-v':{act:'visual_block',code:'KeyV',mods:[2]}
+        'C-v':{act:'visual',code:'KeyV',mods:[2]}
     };
 
     const seq=(()=>{
         let tsq={/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
             'fd':{act:'escape',rn:'df',dt:500}
-            /* 'jk':{act:'escape'}, */
+            /* 'jk':{act:'escape',rn:'kj'},
+             'cs':{act:'surround',rn:'sc'},
+             'ds':{act:'surround',rn:'sd'},
+             'ys':{act:'surround',rn:'sy'}
+             */
         };
         return tsq;
     })();
@@ -41,14 +45,16 @@ const WIMUI=()=>{
             mult_0:'123456789',
             mult_N:'0123456789',
             repeat:'.',
+            surround:'s',
             text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
             undo:'u',
             verb:'cdy',
-            visual:'v',
-            visual_line:'V'
+            visual:'vV'
         };
-        let as='';for(let i=32;i<127;++i){as+=String.fromCharCode(i);} xs.ascii=as;
-        let t={};for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}/* invert xs table */
+        let as='';
+        for(let i=32;i<127;++i){as+=String.fromCharCode(i);} xs.ascii=as;
+        let t={};
+        for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}/* invert xs table */
         t.Escape=['escape'];
         return t;
     })();
@@ -234,9 +240,9 @@ const WIMUI=()=>{
             else{console.log(msg);}
         };
 
-        if(Object.keys(ok_chord).length){/* chord? */ tf(ok_chord,'bad chord');}
-        else if(ok_seq){/* sequence? */ tf(ok_seq,'bad sequence');}
-        else{/* single key? */
+        if(Object.keys(ok_chord).length){tf(ok_chord,'bad chord');}
+        else if(ok_seq){tf(ok_seq,'bad sequence');}
+        else{
             let et=atom[input.KS[0][0]]||[];
             for(let i=0;i<et.length;++i){
                 if(et.length && (fn=st[current_state][et[i]])){action=et[i]; break;}
@@ -252,9 +258,13 @@ const WIMUI=()=>{
         if(!next_state){next_state=current_state;}/* fallback 1 */
         if(!st[next_state]){next_state=unexpected_state(action,next_state);}/* fallback 2 */
 
-        /* TODO actual output */
-        /* TODO accumulate actual keys and, upon successful state change,
-         export the key sequence to external handling function. */
+        /* TODO actual output
+
+         Option 1: Accumulate actual keys and (upon successful state change)
+         export the key sequence to external handling function.
+
+         Option 2: Immediately pass (state, key) tuples to handling function.
+         */
         console.log(`state: ${next_state}`);
         current_state=next_state;/* prepare for next `update` */
     };
