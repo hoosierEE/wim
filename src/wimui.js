@@ -1,10 +1,4 @@
-/* Vim-sytle UI
- The state machine design in this class is taken directly from here (Thanks IBM!):
- http://www.ibm.com/developerworks/library/wa-finitemach1/
-
- Offical WIMUI state transition table is here (x indicates disallowed state):
- https://docs.google.com/spreadsheets/d/1gVKCasnhn3aBtXefvZiW6Ht5fp7YofSgvZtBTXDhdzE/edit?usp=sharing
- */
+/* Vim-sytle UI */
 const WIMUI=()=>{
     /* simple objects */
     let current_state='normal';
@@ -23,17 +17,9 @@ const WIMUI=()=>{
         'C-v':{act:'visual',code:'KeyV',mods:[2]}
     };
 
-    const seq=(()=>{
-        let tsq={/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
-            'fd':{act:'escape',rn:'df',dt:500}
-            /* 'jk':{act:'escape',rn:'kj'},
-             'cs':{act:'surround',rn:'sc'},
-             'ds':{act:'surround',rn:'sd'},
-             'ys':{act:'surround',rn:'sy'}
-             */
-        };
-        return tsq;
-    })();
+    const seq={/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
+        'fd':{act:'escape',rn:'df',dt:500}
+    };
 
     const atom=(()=>{/* {Char:[Type]} */
         let xs={/* {Type:[Char]} */
@@ -59,188 +45,37 @@ const WIMUI=()=>{
         return t;
     })();
 
-    const st=(()=>{/* {State:{Event->State}} */
-        let t={
-            normal:{
-                mult_0(e){/*multiplier_str[0]+=e.val;*/ return 'mult_N';},
-                verb(e){return 'verb';},
-                text_object(e){/* move_cursor_to_object_if_possible */return 'normal';},
-                motion(e){/* move_cursor_by_motion_if_possible */return 'normal';},
-                visual(e){return 'visual';},
-                visual_line(e){return 'visual_line';},
-                visual_block(e){return 'visual_block';},
-                find_char(e){return 'find_char';},
-                insert(e){return 'insert';},
-                escape(e){return 'normal';},
-                edit(e){/* switch(e){...} */ return 'normal';},
-                undo(e){return 'normal';},
-                repeat(e){/* repeat_last_thing */ return 'normal';}
-            },
-
-            mult_N:{
-                mult_N(e){/*multiplier_str[0]+=e.val; */ return 'mult_N';},
-                verb(e){/*multiplier_str[0]*=parseInt(multiplier_str[0],10); */ return 'verb';},
-                text_object(e){/* go(e) */ return 'normal';},
-                motion(e){/* go(e) */ return 'normal';},
-                visual(e){return 'visual';},
-                visual_line(e){return 'visual_line';},
-                visual_block(e){return 'visual_block';},
-                find_char(e){/*multiplier_str[1]+=e.val; */ return 'find_char';},
-                insert(e){return 'insert_N';},
-                escape(e){return 'normal';},
-                edit(e){return 'normal';},
-                undo(e){return 'normal';},
-                repeat(e){return 'normal';}
-            },
-
-            verb:{
-                mult_0(e){/* save n1 */ return 'post_verb';},
-                mult_N(e){/* save n1 */ return 'post_verb';},
-                verb(e){/* if (verb == earlier verb) do(linewise); */ return 'normal';},
-                modifier(e){return 'modifier';},
-                text_object(e){/* go(object) */ return 'normal';},
-                motion(e){/* go(motion) */ return 'normal';},
-                find_char(e){return 'find_char_verb';},
-                escape(e){return 'normal';}
-            },
-
-            post_verb:{
-                verb(e){/* if (post_verb == verb) do(linewise); */ return 'normal';},
-                modifier(e){return 'modifier';},
-                text_object(e){/* do(object) */ return 'normal';},
-                motion(e){/* do(motion) */ return 'normal';},
-                find_char(e){return 'find_char_verb';},
-                escape(e){return 'normal';}
-            },
-
-            modifier:{
-                text_object(e){/* do(object) */ return 'normal';},
-                motion(e){/* do(motion) */ return 'normal';}
-            },
-
-            visual:{
-                mult_0(e){/* save n0 */ return 'visual';},
-                mult_N(e){/* save n0 */ return 'visual';},
-                verb(e){/* do(range) */ return 'normal';},
-                text_object(e){/* go(object) */ return 'visual';},
-                motion(e){/* go(motion) */ return 'visual';},
-                visual(e){return 'normal';},
-                visual_line(e){return 'visual_line';},
-                visual_block(e){return 'visual_block';},
-                find_char(e){return 'find_char_visual';},
-                insert(e){return 'insert';},
-                escape(e){return 'normal';},
-                edit(e){/* edit() */ return 'normal';}
-            },
-
-            visual_line:{
-                mult_0(e){/* save n0 */ return 'visual_line';},
-                mult_N(e){/* save n0 */ return 'visual_line';},
-                verb(e){/* do(linewise) */ return 'normal';},
-                text_object(e){/* go(object) */ return 'visual_line';},
-                motion(e){/* go(motion) */ return 'visual_line';},
-                visual(e){return 'visual';},
-                visual_line(e){return 'normal';},
-                visual_block(e){return 'visual_block';},
-                find_char(e){return 'find_char_visual_line';},
-                insert(e){/* if(AIS) */ return 'insert_block';},
-                escape(e){return 'normal';},
-                edit(e){/* edit() */ return 'normal';}
-            },
-
-            visual_block:{
-                mult_0(e){/* save n0 */ return 'visual_line';},
-                mult_N(e){/* save n0 */ return 'visual_line';},
-                verb(e){/* do(linewise) */ return 'normal';},
-                text_object(e){/* go(object) */ return 'visual_block';},
-                motion(e){/* go(motion) */ return 'visual_block';},
-                visual(e){return 'visual';},
-                visual_line(e){return 'visual_line';},
-                visual_block(e){return 'normal';},
-                find_char(e){return 'find_char_visual_block';},
-                insert(e){/* if(AIS) */ return 'insert_block';},
-                escape(e){return 'normal';},
-                edit(e){/* edit() */ return 'normal';}
-            },
-
-            find_char:{
-                escape(e){return 'normal';},
-                ascii(e){/* go(range) */ return 'normal';}
-            },
-
-            find_char_visual:{
-                escape(e){return 'normal';},
-                ascii(e){/* go(range) */ return 'visual';}
-            },
-
-            find_char_visual_line:{
-                escape(e){return 'normal';},
-                ascii(e){/* go(range) */ return 'visual_line';}
-            },
-
-            find_char_visual_block:{
-                escape(e){return 'normal';},
-                ascii(e){/* go(range) */ return 'visual_block';}
-            },
-
-            find_char_verb:{
-                escape(e){return 'normal';},
-                ascii(e){/* if e is found do(range) */ return 'normal';}
-            },
-
-            insert:{
-                escape(e){return 'normal';},
-                ascii(e){/* put(e) */ return 'insert';}
-            },
-
-            insert_N:{
-                escape(e){/* put(e) in other lines */ return 'normal';},
-                ascii(e){/* put(e) */ return 'insert_N';}
-            },
-
-            insert_block:{
-                escape(e){/* put(e) in other lines */ return 'normal';},
-                ascii(e){/* put(e) */ return 'insert_block';}
-            },
-
-            insert_block_N:{
-                escape(e){/* put(e) in other lines */ return 'normal';},
-                ascii(e){/* put(e) */ return 'insert_block_N';}
-            }
-        };
-        t.mult_0=t.mult_N;
-        return t;
-    })();
+    const st={/* StateTable : {State:{Event->State}} */
+    };
 
     const update=(input)=>{
-        let fd=input.KS[0], action='nop', fn, ok_chord={}, ok_seq;
-
-        /* Test input for chord. */
-        for(let x in chord){
-            let i=chord[x];
-            if((Array.from(input.KC).indexOf(i.code)>-1) &&
-               (0>i.mods || i.mods.some(y=>y==input.KS[3][0]))){
-                ok_chord=i;
-                ok_chord.name=x;
-                break;
+        const [ok_chord, ok_seq]=((n)=>{
+            /* Test input for chord. */
+            for(let x in chord){
+                let i=chord[x];
+                if((Array.from(n.KC).indexOf(i.code)>-1)&&(0>i.mods||i.mods.some(y=>y==n.KS[3][0]))){
+                    i.name=x;
+                    return [i,null];
+                }
             }
-        }
-
-        /* Test input for sequence. */
-        for(let x in seq){
-            let i=seq[x];
-            if(input.KS[0].join('').startsWith(i.rn)){
-                ok_seq=(!i.dt)?i:(i.dt>input.KS[2].slice(0,x.length).reduce((a,b)=>a-b))?i:null;
-                break;
+            /* Test input for sequence. */
+            for(let x in seq){
+                let i=seq[x];
+                if(n.KS[0].join('').startsWith(i.rn)){
+                    let j=(!i.dt)?i:(i.dt>n.KS[2].slice(0,x.length).reduce((a,b)=>a-b))?i:null;
+                    return [null,j];
+                }
             }
-        }
+            return [null,null];
+        })(input);
 
+        let action='nop', fn=unexpected_event;
         const tf=(e,msg)=>{
             if((fn=st[current_state][e.act])){action=e.act;}
             else{console.log(msg);}
         };
 
-        if(Object.keys(ok_chord).length){tf(ok_chord,'bad chord');}
+        if(ok_chord){tf(ok_chord,'bad chord');}
         else if(ok_seq){tf(ok_seq,'bad sequence');}
         else{
             let et=atom[input.KS[0][0]]||[];
@@ -249,30 +84,25 @@ const WIMUI=()=>{
             }
         }
 
-        /* Action or nop? */
         if(action==='nop'){return;}
-        if(!action){fn=unexpected_event;}
 
-        /* Compute next state. */
-        let obj={}, next_state=fn.call(this,obj);/* try */
-        if(!next_state){next_state=current_state;}/* fallback 1 */
-        if(!st[next_state]){next_state=unexpected_state(action,next_state);}/* fallback 2 */
+        /* Otherwise compute next state. */
+        let obj={}, next_state=fn.call(this,obj);
+        if(!next_state){next_state=current_state;}
+        if(!st[next_state]){next_state=unexpected_state(action,next_state);}
 
-        /* TODO actual output
-
+        /* TODO output
          Option 1: Accumulate actual keys and (upon successful state change)
          export the key sequence to external handling function.
-
          Option 2: Immediately pass (state, key) tuples to handling function.
          */
-        console.log(`state: ${next_state}`);
-        current_state=next_state;/* prepare for next `update` */
+        current_state=next_state;
     };
 
     const unexpected_event=(e)=>{
         console.log(`unexpected event: ${e}`);
         reset_multiplier();
-        return o.initial_state;
+        return initial_state;
     };
 
     const unexpected_state=(e,s)=>{
