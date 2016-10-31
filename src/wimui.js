@@ -4,7 +4,7 @@ const WIMUI=()=>{
     let current_state='normal';
     const multiplier=1,
           multiplier_str=['',''],
-          get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1)},
+          get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1);},
           reset_multiplier=()=>{multiplier=1; multiplier_str=['',''];},
           initial_state='normal';
 
@@ -23,6 +23,7 @@ const WIMUI=()=>{
 
     const atom=(()=>{/* {Char:[Type]} */
         let xs={/* {Type:[Char]} */
+            bracket:'[{()}]',
             edit:'oOpPrxX',
             find_char:'fFtT',
             insert:'aAiI',
@@ -46,6 +47,33 @@ const WIMUI=()=>{
     })();
 
     const st={/* StateTable : {State:{Event->State}} */
+        mult_0:'',
+        verb:{
+            modifier:{
+                seek:'ascii',
+                text_object:null
+            },
+            motion:null,
+            seek:'ascii',
+            text_object:null
+        },
+        motion:null,
+        seek:'ascii',
+        surround:{
+            c:{bracket:'bracket'},
+            d:'bracket',
+            y:{
+                bracket:'bracket',
+                modifier:{
+                    motion:'bracket',
+                    seek:{ascii:'bracket'},
+                    text_object:'bracket'
+                },
+                seek:{ascii:'bracket'},
+                text_object:'bracket'
+            }
+        },
+        text_object:null
     };
 
     const update=(input)=>{
