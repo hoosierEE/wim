@@ -18,11 +18,15 @@ const WIMUI=()=>{
     };
 
     const seq={/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
-        'fd':{act:'escape',rn:'df',dt:500}
+        'fd':{act:'escape',rn:'df',dt:500},
+        'cs':{act:'csurround',rn:'sc'},
+        'ds':{act:'dsurround',rn:'sd'},
+        'ys':{act:'ysurround',rn:'sy'}
     };
 
     const atom=(()=>{/* {Char:[Type]} */
         let xs={/* {Type:[Char]} */
+            ascii:'',
             bracket:'[{()}]',
             edit:'oOpPrxX',
             find_char:'fFtT',
@@ -32,7 +36,10 @@ const WIMUI=()=>{
             mult_0:'123456789',
             mult_N:'0123456789',
             repeat:'.',
+            search:'/?',
             surround:'s',
+            tag:' 0123456789=:-',
+            tag_end:'/>',
             text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
             undo:'u',
             verb:'cdy',
@@ -40,6 +47,8 @@ const WIMUI=()=>{
         };
         let as='';
         for(let i=32;i<127;++i){as+=String.fromCharCode(i);} xs.ascii=as;
+        for(let i=65;i<90;++i){xs.tag+=String.fromCharCode(i);}
+        for(let i=97;i<122;++i){xs.tag+=String.fromCharCode(i);}
         let t={};
         for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}/* invert xs table */
         t.Escape=['escape'];
@@ -47,33 +56,63 @@ const WIMUI=()=>{
     })();
 
     const st={/* StateTable : {State:{Event->State}} */
-        mult_0:'',
+        mult_0:NaN,
         verb:{
             modifier:{
-                seek:'ascii',
-                text_object:null
+                seek:{ascii:1},
+                text_object:1
             },
-            motion:null,
-            seek:'ascii',
-            text_object:null
+            motion:1,
+            seek:{ascii:1},
+            text_object:1
         },
-        motion:null,
-        seek:'ascii',
-        surround:{
-            c:{bracket:'bracket'},
-            d:'bracket',
-            y:{
-                bracket:'bracket',
-                modifier:{
-                    motion:'bracket',
-                    seek:{ascii:'bracket'},
-                    text_object:'bracket'
-                },
-                seek:{ascii:'bracket'},
-                text_object:'bracket'
+        csurround:{
+            bracket:{
+                bracket:1,
+                tag:{tag_end:1}
+            },
+            tag:{
+                bracket:1,
+                tag_end:1
             }
         },
-        text_object:null
+        dsurround:{
+            bracket:1,
+            tag:{tag_end:1}
+        },
+        ysurround:{
+            bracket:{
+                bracket:1,
+                tag:{tag_end:1}
+            },
+            modifier:{
+                seek:{ascii:{
+                    bracket:1,
+                    tag:{tag_end:1}
+                }},
+                text_object:{
+                    bracket:1,
+                    tag:{tag_end:1}
+                }
+            },
+            motion:{
+                bracket:1,
+                tag:{tag_end:1}
+            },
+            seek:{
+                ascii:{
+                    bracket:1,
+                    tag:{tag_end:1}
+                }
+            },
+            text_object:{
+                bracket:1,
+                tag:{tag_end:1}
+            }
+        },
+        motion:1,
+        seek:{ascii:1},
+        text_object:1
     };
 
     const update=(input)=>{
