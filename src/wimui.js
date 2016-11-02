@@ -1,10 +1,8 @@
 /* Vim-sytle UI */
 const WIMUI=()=>{
     /* simple objects */
-    let current_state='normal';
-    const multiplier=1,
-          multiplier_str=['',''],
-          get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1);},
+    let current_state='normal', multiplier=1, multiplier_str=['',''];
+    const get_multiplier=(multstr)=>{/* [String] -> Int */ return multstr.reduce((a,b)=>a*(b||1),1);},
           reset_multiplier=()=>{multiplier=1; multiplier_str=['',''];},
           initial_state='normal';
 
@@ -56,7 +54,7 @@ const WIMUI=()=>{
     })();
 
     const st={/* StateTable : {State:{Event->State}} */
-        mult_0:NaN,
+        get mult_0(){return this;},
         verb:{
             modifier:{
                 seek:{ascii:1},
@@ -116,11 +114,12 @@ const WIMUI=()=>{
     };
 
     const update=(input)=>{
-        const [ok_chord, ok_seq]=((n)=>{
+        /* parse input */
+        const [ok_chord, ok_seq]=((inn)=>{
             /* Test input for chord. */
             for(let x in chord){
                 let i=chord[x];
-                if((Array.from(n.KC).indexOf(i.code)>-1)&&(0>i.mods||i.mods.some(y=>y==n.KS[3][0]))){
+                if((Array.from(inn.KC).indexOf(i.code)>-1)&&(0>i.mods||i.mods.some(y=>y==inn.KS[3][0]))){
                     i.name=x;
                     return [i,null];
                 }
@@ -128,42 +127,48 @@ const WIMUI=()=>{
             /* Test input for sequence. */
             for(let x in seq){
                 let i=seq[x];
-                if(n.KS[0].join('').startsWith(i.rn)){
-                    let j=(!i.dt)?i:(i.dt>n.KS[2].slice(0,x.length).reduce((a,b)=>a-b))?i:null;
+                if(inn.KS[0].join('').startsWith(i.rn)){
+                    let j=(!i.dt)?i:(i.dt>inn.KS[2].slice(0,x.length).reduce((a,b)=>a-b))?i:null;
                     return [null,j];
                 }
             }
             return [null,null];
         })(input);
 
-        let action='nop', fn=unexpected_event;
+        let action='nop', fn=null;
+        // state=state[event]||st[event]
+        // if(state!=null){stack.push(event)} else{err(stack); stack=[]}
+        // if(state==1){do(stack);stack=[]}
+
         const tf=(e,msg)=>{
-            if((fn=st[current_state][e.act])){action=e.act;}
-            else{console.log(msg);}
+            if(fn && e.act in fn){fn=fn[e.act];}
+            else if(e.act in st){fn=st[e.act];}
+            else{console.log(msg);return;}
+            console.log(fn);
+            action=e.act;
         };
 
         if(ok_chord){tf(ok_chord,'bad chord');}
         else if(ok_seq){tf(ok_seq,'bad sequence');}
         else{
             let et=atom[input.KS[0][0]]||[];
+            console.log(et);
             for(let i=0;i<et.length;++i){
-                if(et.length && (fn=st[current_state][et[i]])){action=et[i]; break;}
+                if(fn && et[i] in fn){fn=fn[et[i]];}
+                else if(et[i] in st){fn=st[et[i]];}
+                else{console.log('no seq');}
+                console.log(fn);
+                if(et.length && matched){action=et[i]; break;}
             }
         }
 
         if(action==='nop'){return;}
-
-        /* Otherwise compute next state. */
-        let obj={}, next_state=fn.call(this,obj);
-        if(!next_state){next_state=current_state;}
-        if(!st[next_state]){next_state=unexpected_state(action,next_state);}
 
         /* TODO output
          Option 1: Accumulate actual keys and (upon successful state change)
          export the key sequence to external handling function.
          Option 2: Immediately pass (state, key) tuples to handling function.
          */
-        current_state=next_state;
     };
 
     const unexpected_event=(e)=>{
@@ -173,9 +178,9 @@ const WIMUI=()=>{
     };
 
     const unexpected_state=(e,s)=>{
-        console.log(`unexpected state: ${e}`);
+        console.log(`unexpected state: ${s}`);
         return unexpected_event(e);
     };
 
-    return ({update});
+    return ({update,st});
 };
