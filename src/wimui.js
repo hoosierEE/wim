@@ -139,7 +139,8 @@ const WIMUI=()=>{
 
         const tf=(e,msg)=>{
             /* TODO -- also push to stack */
-            fn=(fn&&e in fn)?fn[e]:(e in st)?st[e]:null;
+            if(fn==null && e in st){fn=st[e];}
+            else if(e in fn){fn=fn[e];}
             if(!fn){console.log(`${msg}: ${fn}`);}/* TODO: also clear stack */
             return fn;
         };
