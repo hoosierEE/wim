@@ -136,33 +136,23 @@ const WIMUI=()=>{
         })(input);
 
         let action='nop', fn=null;
-        // state=state[event]||st[event]
-        // if(state!=null){stack.push(event)} else{err(stack); stack=[]}
-        // if(state==1){do(stack);stack=[]}
 
         const tf=(e,msg)=>{
-            if(fn && e.act in fn){fn=fn[e.act];}
-            else if(e.act in st){fn=st[e.act];}
-            else{console.log(msg);return;}
-            console.log(fn);
-            action=e.act;
+            /* TODO -- also push to stack */
+            fn=(fn&&e in fn)?fn[e]:(e in st)?st[e]:null;
+            if(!fn){console.log(`${msg}: ${fn}`);}/* TODO: also clear stack */
+            return fn;
         };
 
-        if(ok_chord){tf(ok_chord,'bad chord');}
-        else if(ok_seq){tf(ok_seq,'bad sequence');}
+        if(ok_chord){tf(ok_chord.act,'bad chord');}
+        else if(ok_seq){tf(ok_seq.act,'bad sequence');}
         else{
-            let et=atom[input.KS[0][0]]||[];
-            console.log(et);
+            let et=atom[input.KS[0][0]]||[];// console.log(et);
             for(let i=0;i<et.length;++i){
-                if(fn && et[i] in fn){fn=fn[et[i]];}
-                else if(et[i] in st){fn=st[et[i]];}
-                else{console.log('no seq');}
-                console.log(fn);
-                if(et.length && matched){action=et[i]; break;}
+                if(!tf(et[i],'bad atom'))break;
             }
         }
-
-        if(action==='nop'){return;}
+        console.log(`fn: ${fn}`);
 
         /* TODO output
          Option 1: Accumulate actual keys and (upon successful state change)
