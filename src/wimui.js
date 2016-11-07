@@ -114,7 +114,7 @@ const WIMUI=()=>{
     };
 
     const update=(input)=>{
-        /* parse input */
+        /* tokenize input */
         const [ok_chord, ok_seq]=((inn)=>{
             /* Test input for chord. */
             for(let x in chord){
@@ -135,16 +135,29 @@ const WIMUI=()=>{
             return [null,null];
         })(input);
 
-        let action='nop', fn=null;
+        let fn=null;
 
         const tf=(e,msg)=>{
             /* TODO -- also push to stack */
-            if(fn==null && e in st){fn=st[e];}
-            else if(e in fn){fn=fn[e];}
-            if(!fn){console.log(`${msg}: ${fn}`);}/* TODO: also clear stack */
-            return fn;
+            try{
+                fn=fn[e];
+            }
+            catch(ex0){
+                try{
+                    fn=st[e];
+                }
+                catch(ex1){
+                    fn=null;
+                }
+            }
+            if(fn==null){
+                console.log(msg);
+                return false;
+            }
+            return true;
         };
 
+        if(tf(ok_chord.act,'bad chord');)
         if(ok_chord){tf(ok_chord.act,'bad chord');}
         else if(ok_seq){tf(ok_seq.act,'bad sequence');}
         else{
@@ -153,7 +166,6 @@ const WIMUI=()=>{
                 if(!tf(et[i],'bad atom'))break;
             }
         }
-        console.log(`fn: ${fn}`);
 
         /* TODO output
          Option 1: Accumulate actual keys and (upon successful state change)
