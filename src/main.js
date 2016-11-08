@@ -26,7 +26,7 @@ const update=(performance_now)=>{
 let IN={
     KC:new Set(),/* {KeyChord} */
     KS:[[],[],[],[]],/* [[Key],[Code],[Millis],[ModCode]] */
-    KS_MAXLEN:10,
+    KS_MAXLEN:10
 };
 
 /* key_handler : KeyboardEvent -> u1 -> IO() */
@@ -38,10 +38,10 @@ const key_handler=(ev)=>{
                   ['altKey','ctrlKey','metaKey','shiftKey']
                   .reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
               /* ev.preventDefault() if none of these chords match. */
-              pd={'KeyI':[5,10],/* Ctrl-I or Cmd-Opt-i */
-                  'KeyR':[2,4],/* Ctrl-r or Cmd-r */
+              pd={'KeyI':[5,10], /* Ctrl-I or Cmd-Opt-i */
+                  'KeyR':[2,4]   /* Ctrl-r or Cmd-r */
                  }[rk[1]];pd?pd.every(m=>rk[3]!==m):true&&ev.preventDefault();
-        rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]); IN.KS[i]=IN.KS[i].slice(0,IN.KS_MAXLEN)});
+        rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]); IN.KS[i]=IN.KS[i].slice(0,IN.KS_MAXLEN);});
         requestAnimationFrame(update);
     }
 };

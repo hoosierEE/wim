@@ -44,7 +44,8 @@ const WIMUI=()=>{
             visual:'vV'
         };
         let as='';
-        for(let i=32;i<127;++i){as+=String.fromCharCode(i);} xs.ascii=as;
+        for(let i=32;i<127;++i){as+=String.fromCharCode(i);}
+        xs.ascii=as;
         for(let i=65;i<90;++i){xs.tag+=String.fromCharCode(i);}
         for(let i=97;i<122;++i){xs.tag+=String.fromCharCode(i);}
         let t={};
@@ -173,17 +174,5 @@ const WIMUI=()=>{
          Option 2: Immediately pass (state, key) tuples to handling function.
          */
     };
-
-    const unexpected_event=(e)=>{
-        console.log(`unexpected event: ${e}`);
-        reset_multiplier();
-        return initial_state;
-    };
-
-    const unexpected_state=(e,s)=>{
-        console.log(`unexpected state: ${s}`);
-        return unexpected_event(e);
-    };
-
     return ({update,st});
 };
