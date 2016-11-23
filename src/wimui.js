@@ -46,15 +46,15 @@ const WIMUI=()=>{
         let as='';
         for(let i=32;i<127;++i){as+=String.fromCharCode(i);}
         xs.ascii=as;
-        for(let i=65;i<90;++i){xs.tag+=String.fromCharCode(i);}
-        for(let i=97;i<122;++i){xs.tag+=String.fromCharCode(i);}
+        for(let i=65;i<90;++i){xs.tag+=String.fromCharCode(i);}/* A-Z */
+        for(let i=97;i<122;++i){xs.tag+=String.fromCharCode(i);}/* a-z */
         let t={};
         for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}/* invert xs table */
         t.Escape=['escape'];
         return t;
     })();
 
-    const st={/* StateTable : {State:{Event->State}} */
+    const st={/* State Tree */
         get mult_0(){return this;},
         verb:{
             modifier:{
@@ -114,13 +114,17 @@ const WIMUI=()=>{
         text_object:1
     };
 
+    let fn=null;
+
     const update=(input)=>{
         /* tokenize input */
         const [ok_chord, ok_seq]=((inn)=>{
             /* Test input for chord. */
             for(let x in chord){
-                let i=chord[x];
-                if((Array.from(inn.KC).indexOf(i.code)>-1)&&(0>i.mods||i.mods.some(y=>y==inn.KS[3][0]))){
+                let i=chord[x],
+                    a=Array.from(inn.KC).indexOf(i.code)>-1,
+                    b=0>i.mods||i.mods.some(y=>y==inn.KS[3][0]);
+                if(a&&b){
                     i.name=x;
                     return [i,null];
                 }
@@ -136,37 +140,30 @@ const WIMUI=()=>{
             return [null,null];
         })(input);
 
-        let fn=null;
-
-        const tf=(e,msg)=>{
-            /* TODO -- also push to stack */
-            try{
-                fn=fn[e];
-            }
-            catch(ex0){
-                try{
-                    fn=st[e];
-                }
-                catch(ex1){
-                    fn=null;
-                }
-            }
-            if(fn==null){
-                console.log(msg);
-                return false;
-            }
-            return true;
+        const match_state=(e,msg)=>{
+            //console.log(e);
+            if(fn==null){fn=st[e];}
+            else if(fn[e]!=null){fn=fn[e];}
+            else if(st[e]!=null){fn=st[e];}
+            else{fn=null;}
+            return fn!=null;
         };
 
-        if(tf(ok_chord.act,'bad chord');)
-        if(ok_chord){tf(ok_chord.act,'bad chord');}
-        else if(ok_seq){tf(ok_seq.act,'bad sequence');}
+        if(ok_chord){
+            match_state(ok_chord.act,'bad chord');
+        }
+        else if(ok_seq){
+            match_state(ok_seq.act,'bad sequence');
+        }
         else{
             let et=atom[input.KS[0][0]]||[];// console.log(et);
             for(let i=0;i<et.length;++i){
-                if(!tf(et[i],'bad atom'))break;
+                //console.log(et[i]);
+                if(match_state(et[i],'bad atom')) break;
             }
         }
+
+        console.log(fn);
 
         /* TODO output
          Option 1: Accumulate actual keys and (upon successful state change)

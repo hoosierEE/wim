@@ -58,7 +58,7 @@ const pixel_ratio_fix=(s)=>{
     ctx.font=(9*dpr)+'px "Source Code Pro for Powerline"';
     ctx.scale(dpr,dpr);
 };
-let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. "
+let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. ";
 
 window.addEventListener('load',()=>{
     pixel_ratio_fix(str);
