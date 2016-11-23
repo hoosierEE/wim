@@ -22,8 +22,8 @@ const WIMUI=()=>{
         'ys':{act:'ysurround',rn:'sy'}
     };
 
-    const atom=(()=>{/* {Char:[Type]} */
-        let xs={/* {Type:[Char]} */
+    const atom=(()=>{/* Eventually becomes {Char:[Type]} */
+        let xs={/* Starts off as {Type:[Char]} */
             ascii:'',
             bracket:'[{()}]',
             edit:'oOpPrxX',
@@ -46,6 +46,7 @@ const WIMUI=()=>{
         let as='';
         for(let i=32;i<127;++i){as+=String.fromCharCode(i);}
         xs.ascii=as;
+        /* tag doesn't start empty */
         for(let i=65;i<90;++i){xs.tag+=String.fromCharCode(i);}/* A-Z */
         for(let i=97;i<122;++i){xs.tag+=String.fromCharCode(i);}/* a-z */
         let t={};
@@ -114,34 +115,33 @@ const WIMUI=()=>{
         text_object:1
     };
 
-    let fn=null;
+    const chord_seq_check=(n)=>{
+        for(let x in chord){
+            const i=chord[x],
+                  has_key=Array.from(n.KC).indexOf(i.code)>-1,
+                  has_mod=(0>i.mods)||i.mods.some(y=>y==n.KS[3][0]);
+            if(has_key&&has_mod){
+                i.name=x;
+                return [i,null];
+            }
+        }
+        const dt_check=(x,y,z)=>(!x||y)?z:null;
+        for(let x in seq){
+            const i=seq[x],
+                  has_seq=n.KS[0].join('').startsWith(i.rn);
+            if(has_seq){
+                const exceeded_timeout=i.dt>n.KS[2].slice(0,x.length).reduce((a,b)=>a-b);
+                return [null,dt_check(i.dt,exceeded_timeout,i)];
+            }
+        }
+        return [null,null];
+    };
 
+    let fn=st;
     const update=(input)=>{
-        /* tokenize input */
-        const [ok_chord, ok_seq]=((inn)=>{
-            /* Test input for chord. */
-            for(let x in chord){
-                let i=chord[x],
-                    a=Array.from(inn.KC).indexOf(i.code)>-1,
-                    b=0>i.mods||i.mods.some(y=>y==inn.KS[3][0]);
-                if(a&&b){
-                    i.name=x;
-                    return [i,null];
-                }
-            }
-            /* Test input for sequence. */
-            for(let x in seq){
-                let i=seq[x];
-                if(inn.KS[0].join('').startsWith(i.rn)){
-                    let j=(!i.dt)?i:(i.dt>inn.KS[2].slice(0,x.length).reduce((a,b)=>a-b))?i:null;
-                    return [null,j];
-                }
-            }
-            return [null,null];
-        })(input);
+        [ok_chord,ok_seq]=chord_seq_check(input);
 
         const match_state=(e,msg)=>{
-            //console.log(e);
             if(fn==null){fn=st[e];}
             else if(fn[e]!=null){fn=fn[e];}
             else if(st[e]!=null){fn=st[e];}
@@ -149,10 +149,10 @@ const WIMUI=()=>{
             return fn!=null;
         };
 
-        if(ok_chord){
+        if(ok_chord!=null){
             match_state(ok_chord.act,'bad chord');
         }
-        else if(ok_seq){
+        else if(ok_seq!=null){
             match_state(ok_seq.act,'bad sequence');
         }
         else{

@@ -15,10 +15,8 @@ const render=(lines)=>{
 
 let wui=WIMUI();
 
-/* update : AnyEvent -> Action */
-/* update : Model -> Model */
 const update=(performance_now)=>{
-    //console.log(Array.from(IN.KC));
+    // console.log(Array.from(IN.KC));
     wui.update(IN);
 };
 
