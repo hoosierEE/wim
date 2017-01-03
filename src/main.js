@@ -21,20 +21,20 @@ const key_handler=(ev,is_keydown)=>{
                   'KeyR':[2,4]   /* Ctrl-r or Cmd-r */
                  }[rk[1]];pd?pd.every(m=>rk[3]!==m):true&&ev.preventDefault();
         rk.forEach((_,i)=>{IN.KS[i].unshift(rk[i]); IN.KS[i]=IN.KS[i].slice(0,IN.KS_MAXLEN);});
-        requestAnimationFrame(update);
+        requestAnimationFrame((ms)=>{wui.update(IN);});
     }
 };
 window.addEventListener('keydown',(e)=>key_handler(e,1));
 window.addEventListener('keyup',(e)=>key_handler(e,0));
 
-/* Window -- load, resize */
+/* Render to canvas */
 const pixel_ratio_fix=(s)=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
+    ctx.scale(dpr,dpr);
     [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
     [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
     // fonts AFTER canvas mod
     ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
-    ctx.scale(dpr,dpr);
 };
 
 /* render : String -> IO() TODO change to (render : Model -> IO()) */
@@ -43,9 +43,8 @@ const render=(lines)=>{
     let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
 };
 
-// testing
 let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. ";
-const winevts=()=>{pixel_ratio_fix(str);render(str);}
+const winevts=()=>{pixel_ratio_fix(str); render(str);};
 window.addEventListener('load',winevts);
 window.addEventListener('resize',winevts);
 

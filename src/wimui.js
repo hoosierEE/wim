@@ -9,6 +9,7 @@ const WIMUI=()=>{
     const seq=(()=>{/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
         const ts={
             'fd':{act:'escape',dt:500},
+            'asdf':{act:'escape',dt:500},
             'gg':{act:'text_object'},
             'cs':{act:'csurround'},
             'ds':{act:'dsurround'},
@@ -22,7 +23,7 @@ const WIMUI=()=>{
             ascii:'',
             bracket:'[{()}]',
             edit:'oOpPrxX',
-            find_char:'fFtT',
+            seek:'fFtT',
             insert:'aAiI',
             modifier:'ai',
             motion:'hjkl',
@@ -113,10 +114,14 @@ const WIMUI=()=>{
 
     const seq_check=(n)=>{
         const dt_check=(x,y,z)=>(!x||y)?z:null,
-              dt_over=(i,x)=>i.dt>n.KS[2].slice(0,x.length).reduce((a,b)=>a-b);
+              dt_over=(dt,x)=>{
+                  let fsts=n.KS[2].slice(0,x.length-1), snds=n.KS[2].slice(1,x.length), res=[];
+                  for(let i=0;i<fsts.length;++i){res[i]=fsts[i]-snds[i];}
+                  return res.every(x=>dt>x);
+              };
         for(let x in seq){
             const i=seq[x], has_seq=n.KS[0].join('').startsWith(i.rn);
-            if(has_seq){return dt_check(i.dt,dt_over(i,x),i);}
+            if(has_seq){return dt_check(i.dt,dt_over(i.dt,x),i);}
         }
         return null;
     };
@@ -128,11 +133,9 @@ const WIMUI=()=>{
         if(stt[e]){
             current.push(e);
             console.log(current);
-            console.log(`stt: ${stt} leaf: ${leaf}`);
+            console.log(stt);
             if(stt[e]==leaf){
                 console.log("I'm a leaf");
-                console.log(stt);
-                state_reset();
                 return 1;
             }
             else{
@@ -143,21 +146,13 @@ const WIMUI=()=>{
     };
 
     const update=(input)=>{
-        let okc,oks;
-        if((okc=chord_check(input)) && match_state(okc.act)){
-            state_reset();
-        }
-        else if((oks=seq_check(input)) && match_state(oks.act)){
-            state_reset();
-        }
+        const [okc,oks]=[chord_check(input),seq_check(input)];
+        console.log([okc,oks]);
+        if(okc && match_state(okc.act)){state_reset();}
+        else if(oks && match_state(oks.act)){state_reset();}
         else{
-            let et=atom[input.KS[0][0]]||[];
-            for(let i=0;i<et.length;++i){
-                if(match_state(et[i])){
-                    state_reset();
-                    break;
-                }
-            }
+            const et=atom[input.KS[0][0]]||[];
+            for(let i=0;i<et.length;++i){if(match_state(et[i])){state_reset(); break;}}
         }
     };
     return ({update,st,seq});
