@@ -9,8 +9,8 @@ const WimUI=()=>{
 
     const seq=(()=>{/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
         const ts={
-            'fd':{act:'escape',dt:500},
-            'asdf':{act:'escape',dt:500},
+            'fd':{act:'escape',dt:200},
+            'asdf':{act:'escape',dt:200},
             'gg':{act:'text_object'},
             'cs':{act:'csurround'},
             'ds':{act:'dsurround'},
@@ -119,15 +119,17 @@ const WimUI=()=>{
     };
 
     const seq_check=(n)=>{
-        const nst=n.KS[0].join('');
-        const dtgt=(dt,x)=>{/* dt&>/(}.-}:)x */
-            let fsts=n.KS[2].slice(0,x.length-1), snds=n.KS[2].slice(1,x.length), res=[];
-            for(let i=0;i<fsts.length;++i){res[i]=fsts[i]-snds[i];}
-            return res.every(x=>dt>x);
-        };
+        const nst=n.KS[0].join(''),
+              dts=n.KS[2],
+              dtc=(dt,x)=>{
+                  let snds=dts.slice(1,x.length);
+                  return n.KS[2].slice(0,x.length-1).map((x,i)=>{return x-snds[i];}).every(x=>dt>x);
+              };
         for(let x in seq){
             const i=seq[x];
-            if(nst.startsWith(i.rn)){return (!i.dt||dtgt(i.dt,x))?i:null;}
+            if(nst.startsWith(i.rn)){
+                return(!i.dt||dtc(i.dt,x))?i:null;
+            }
         }
         return null;
     };
@@ -145,11 +147,17 @@ const WimUI=()=>{
 
     const update=(input)=>{
         const [okc,oks]=[chord_check(input),seq_check(input)];
+        console.log(oks);
         if(okc && state_match(okc.act)){state_reset();}
         else if(oks && state_match(oks.act)){state_reset();}
         else{
             const et=atom[input.KS[0][0]]||[];
-            for(let i=0;i<et.length;++i){if(state_match(et[i])){state_reset(); break;}}
+            for(let i=0;i<et.length;++i){
+                if(state_match(et[i])){
+                    state_reset();
+                    break;
+                }
+            }
         }
     };
     return ({update,st,seq});
