@@ -104,9 +104,10 @@ const WimUI=()=>{
 
     const chord_check=(n)=>{
         let mod=n.KS[3][0]; if(mod){
+            let kc=Array.from(n.KC);
             for(let x in chord){
                 let i=chord[x],
-                    has_key=Array.from(n.KC).indexOf(i.code)>-1,
+                    has_key=kc.indexOf(i.code)>-1,
                     has_mod=(0>i.mods)||i.mods.some(y=>y==mod);
                 if(has_mod && has_key){i.name=x; return i;}
             }
@@ -163,9 +164,9 @@ const key_handler=(ev,is_keydown)=>{
         const rk=[ev.key, ev.code, ev.timeStamp|0,
                   ['altKey','ctrlKey','metaKey','shiftKey']
                   .reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
-              /* ev.preventDefault() if none of these chords match. */
-              pd={'KeyI':[5,10], /* (Ctrl|Cmd-Opt)-i */
-                  'KeyR':[2,4] /* (Ctrl|Cmd)-r */
+              /* ev.preventDefault() unless match */
+              pd={'KeyI':[5,10],/* (Ctrl|Cmd-Opt)-i */
+                  'KeyR':[2,4]/* (Ctrl|Cmd)-r */
                  }[rk[1]];pd?pd.every(m=>rk[3]!==m):true&&ev.preventDefault();
         rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
         requestAnimationFrame((ms)=>{wui.update(kh);});
@@ -179,7 +180,7 @@ const render=(lines)=>{
     let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
 };
 
-let str="This is Ginger. She is a linx and has a glowing blue mane that she shakes to get warm. She likes to make fire sparks out of her tail. Her favorite thing to eat is peppers so she can make her sparks. Ginger lives with her linx family. She has friends that are birds. They live together in the forest. The trees are magical so they don't get burned down. She likes living in the forest. ";
+let str="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 const winevts=()=>{
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
     ctx.scale(dpr,dpr);
