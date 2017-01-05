@@ -115,10 +115,10 @@ const WimUI=()=>{
 
     const seq_check=(n)=>{
         let nst=n.KS[0].join(''), dts=n.KS[2],
-              dtc=(dt,x)=>{
-                  let snds=dts.slice(1);
-                  return dts.slice(0,x.length-1).map((x,i)=>x-snds[i]).every(x=>dt>x);
-              };
+            dtc=(dt,x)=>{
+                let snds=dts.slice(1);
+                return dts.slice(0,x.length-1).map((x,i)=>x-snds[i]).every(x=>dt>x);
+            };
         for(let x in seq){
             let s=seq[x];
             if(nst.startsWith(s.rn)){
