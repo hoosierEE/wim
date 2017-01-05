@@ -7,7 +7,7 @@ const WimUI=()=>{
         'C-u':{act:'motion',code:'KeyU',mods:[2]},
         'C-v':{act:'visual',code:'KeyV',mods:[2]}};
 
-    const seq=(()=>{/* {Seq:{Action,ReverseName,MinMilliseconds?}} */
+    const seq=(()=>{/* {Seq:{Action,ReverseName,MinMs?}} */
         const ts={
             'fd':{act:'escape',dt:200},
             'asdf':{act:'escape',dt:200},
@@ -39,10 +39,10 @@ const WimUI=()=>{
             undo:'u',
             verb:'cdy',
             visual:'vV'
-        };
-        for(let i=32;i<127;++i){xs.ascii+=String.fromCharCode(i);}
-        for(let i=65;i<90;++i){xs.tag+=String.fromCharCode(i);}/* A-Z */
-        for(let i=97;i<122;++i){xs.tag+=String.fromCharCode(i);}/* a-z */
+        };let sfc=String.fromCharCode;
+        for(let i=32;i<127;++i){xs.ascii+=sfc(i);}
+        for(let i=65;i<90;++i){xs.tag+=sfc(i);}
+        for(let i=97;i<122;++i){xs.tag+=sfc(i);}
         let t={};for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
         t.Escape=['escape'];
         return t;
@@ -103,32 +103,29 @@ const WimUI=()=>{
             text_object:leaf
     });
 
-    const trap=(act,message)=>({act,message});
-
-    const chord_check=(n)=>{ // TODO - signal wrong mod+key chord, not just no match
-        for(let x in chord){
-            const i=chord[x],
-                  has_key=Array.from(n.KC).indexOf(i.code)>-1,
-                  has_mod=(0>i.mods)||i.mods.some(y=>y==n.KS[3][0]);
-            if(has_mod){
-                if(has_key){i.name=x; return i;}
-                else{return trap('nop','no such chord');}
+    const chord_check=(n)=>{
+        let mod=n.KS[3][0];
+        if(mod){
+            for(let x in chord){
+                const i=chord[x],
+                      has_key=Array.from(n.KC).indexOf(i.code)>-1,
+                      has_mod=(0>i.mods)||i.mods.some(y=>y==mod);
+                if(has_mod && has_key){i.name=x; return i;}
             }
         }
         return null;
     };
 
     const seq_check=(n)=>{
-        const nst=n.KS[0].join(''),
-              dts=n.KS[2],
+        const nst=n.KS[0].join(''), dts=n.KS[2],
               dtc=(dt,x)=>{
-                  let snds=dts.slice(1,x.length);
-                  return n.KS[2].slice(0,x.length-1).map((x,i)=>{return x-snds[i];}).every(x=>dt>x);
+                  let snds=dts.slice(1);
+                  return dts.slice(0,x.length-1).map((x,i)=>x-snds[i]).every(x=>dt>x);
               };
         for(let x in seq){
-            const i=seq[x];
-            if(nst.startsWith(i.rn)){
-                return(!i.dt||dtc(i.dt,x))?i:null;
+            const s=seq[x];
+            if(nst.startsWith(s.rn)){
+                return(!s.dt||dtc(s.dt,x))?s:null;
             }
         }
         return null;
@@ -147,17 +144,13 @@ const WimUI=()=>{
 
     const update=(input)=>{
         const [okc,oks]=[chord_check(input),seq_check(input)];
+        console.log(okc);
         console.log(oks);
         if(okc && state_match(okc.act)){state_reset();}
         else if(oks && state_match(oks.act)){state_reset();}
         else{
             const et=atom[input.KS[0][0]]||[];
-            for(let i=0;i<et.length;++i){
-                if(state_match(et[i])){
-                    state_reset();
-                    break;
-                }
-            }
+            for(let i=0;i<et.length;++i){if(state_match(et[i])){state_reset(); break;}}
         }
     };
     return ({update,st,seq});
@@ -167,9 +160,8 @@ const WimUI=()=>{
 // Impl
 const ctx=document.getElementById('c').getContext('2d'),
       wui=WimUI(),
-      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};// {KeyChord}, [[Key],[Code],[Millis],[ModCode]]
+      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};// {KeyChord}, [[Key],[Code],[ms],[Mod]]
 
-/* key_handler : KeyboardEvent -> u1 -> IO() */
 const key_handler=(ev,is_keydown)=>{
     kh.KC[is_keydown?'add':'delete'](ev.code);
     if(is_keydown){
@@ -187,7 +179,7 @@ const key_handler=(ev,is_keydown)=>{
 window.addEventListener('keydown',(e)=>key_handler(e,1));
 window.addEventListener('keyup',(e)=>key_handler(e,0));
 
-const render=(lines)=>{/* String -> IO() */
+const render=(lines)=>{
     ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
     let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
 };
