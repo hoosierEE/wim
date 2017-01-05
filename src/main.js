@@ -1,4 +1,3 @@
-// Libs
 const WimUI=()=>{
     const chord={
         'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
@@ -50,85 +49,82 @@ const WimUI=()=>{
 
     const leaf=1;
     const st=()=>({/* State Tree */
-            escape:leaf,
-            get mult_0(){// mult_0 (once), then mult_N
-                delete this.mult_0;
-                Object.defineProperty(this,'mult_N',{get: function(){return this;}});
-                return this;
-            },
-            verb:{
-                modifier:{
-                    seek:{ascii:leaf},
-                    text_object:leaf},
-                motion:leaf,
+        escape:leaf,
+        get mult_0(){/* mult_0 (once), then mult_N */
+            delete this.mult_0;
+            Object.defineProperty(this,'mult_N',{get: function(){return this;}});
+            return this;
+        },
+        verb:{
+            modifier:{
                 seek:{ascii:leaf},
                 text_object:leaf},
-            csurround:{
-                bracket:{
-                    bracket:leaf,
-                    tag:{tag_end:leaf}},
-                tag:{
-                    bracket:leaf,
-                    tag_end:leaf}},
-            dsurround:{
+            motion:leaf,
+            seek:{ascii:leaf},
+            text_object:leaf},
+        csurround:{
+            bracket:{
                 bracket:leaf,
                 tag:{tag_end:leaf}},
-            ysurround:{
-                bracket:{
-                    bracket:leaf,
-                    tag:{tag_end:leaf}},
-                modifier:{
-                    seek:{
-                        ascii:{
-                            bracket:leaf,
-                            tag:{tag_end:leaf}}},
-                    motion:{
-                        bracket:leaf,
-                        tag:{tag_end:leaf}},
-                    text_object:{
+            tag:{
+                bracket:leaf,
+                tag_end:leaf}},
+        dsurround:{
+            bracket:leaf,
+            tag:{tag_end:leaf}},
+        ysurround:{
+            bracket:{
+                bracket:leaf,
+                tag:{tag_end:leaf}},
+            modifier:{
+                seek:{
+                    ascii:{
                         bracket:leaf,
                         tag:{tag_end:leaf}}},
                 motion:{
                     bracket:leaf,
                     tag:{tag_end:leaf}},
-                seek:{
-                    ascii:{
-                        bracket:leaf,
-                        tag:{tag_end:leaf}}},
                 text_object:{
                     bracket:leaf,
                     tag:{tag_end:leaf}}},
-            motion:leaf,
-            seek:{ascii:leaf},
-            text_object:leaf
+            motion:{
+                bracket:leaf,
+                tag:{tag_end:leaf}},
+            seek:{
+                ascii:{
+                    bracket:leaf,
+                    tag:{tag_end:leaf}}},
+            text_object:{
+                bracket:leaf,
+                tag:{tag_end:leaf}}},
+        motion:leaf,
+        seek:{ascii:leaf},
+        text_object:leaf
     });
 
     const chord_check=(n)=>{
-        let mod=n.KS[3][0];
-        if(mod){
+        let mod=n.KS[3][0]; if(mod){
             for(let x in chord){
-                const i=chord[x],
-                      has_key=Array.from(n.KC).indexOf(i.code)>-1,
-                      has_mod=(0>i.mods)||i.mods.some(y=>y==mod);
+                let i=chord[x],
+                    has_key=Array.from(n.KC).indexOf(i.code)>-1,
+                    has_mod=(0>i.mods)||i.mods.some(y=>y==mod);
                 if(has_mod && has_key){i.name=x; return i;}
             }
-        }
-        return null;
+        } return null;
     };
 
     const seq_check=(n)=>{
-        const nst=n.KS[0].join(''), dts=n.KS[2],
+        let nst=n.KS[0].join(''), dts=n.KS[2],
               dtc=(dt,x)=>{
                   let snds=dts.slice(1);
                   return dts.slice(0,x.length-1).map((x,i)=>x-snds[i]).every(x=>dt>x);
               };
         for(let x in seq){
-            const s=seq[x];
+            let s=seq[x];
             if(nst.startsWith(s.rn)){
                 return(!s.dt||dtc(s.dt,x))?s:null;
             }
-        }
-        return null;
+        } return null;
     };
 
     let current=[], stt=st();
@@ -138,8 +134,7 @@ const WimUI=()=>{
             current.push(e);
             if(stt[e]==leaf){return 1;}
             else{stt=stt[e];}
-        }
-        return 0;
+        } return 0;
     };
 
     const update=(input)=>{
@@ -157,10 +152,10 @@ const WimUI=()=>{
 };
 
 
-// Impl
+/* Impl */
 const ctx=document.getElementById('c').getContext('2d'),
       wui=WimUI(),
-      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};// {KeyChord}, [[Key],[Code],[ms],[Mod]]
+      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};/* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
 
 const key_handler=(ev,is_keydown)=>{
     kh.KC[is_keydown?'add':'delete'](ev.code);
@@ -169,8 +164,8 @@ const key_handler=(ev,is_keydown)=>{
                   ['altKey','ctrlKey','metaKey','shiftKey']
                   .reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
               /* ev.preventDefault() if none of these chords match. */
-              pd={'KeyI':[5,10], /* Ctrl-I or Cmd-Opt-i */
-                  'KeyR':[2,4]   /* Ctrl-r or Cmd-r */
+              pd={'KeyI':[5,10], /* (Ctrl|Cmd-Opt)-i */
+                  'KeyR':[2,4] /* (Ctrl|Cmd)-r */
                  }[rk[1]];pd?pd.every(m=>rk[3]!==m):true&&ev.preventDefault();
         rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
         requestAnimationFrame((ms)=>{wui.update(kh);});
@@ -190,7 +185,7 @@ const winevts=()=>{
     ctx.scale(dpr,dpr);
     [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
     [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
-    // fonts AFTER canvas mod
+    /* fonts AFTER canvas mod */
     ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
     render(str);
 };
