@@ -6,14 +6,15 @@ const WimUI=()=>{
         'C-u':{act:'motion',code:'KeyU',mods:[2]},
         'C-v':{act:'visual',code:'KeyV',mods:[2]}};
 
-    const seq=(()=>{/* {Seq:{Action,ReverseName,MinMs?}} */
+    const seq=(()=>{/* {Seq:{Action,ReverseName,MsBetween?}} */
         const ts={
-            'fd':{act:'escape',dt:200},
-            'asdf':{act:'escape',dt:200},
-            'gg':{act:'text_object'},
-            'cs':{act:'csurround'},
-            'ds':{act:'dsurround'},
-            'ys':{act:'ysurround'}};
+            fd:{act:'escape',dt:200},
+            asdf:{act:'escape',dt:200},
+            dd:{act:'verb'},
+            gg:{act:'text_object'},
+            cs:{act:'csurround'},
+            ds:{act:'dsurround'},
+            ys:{act:'ysurround'}};
         Object.keys(ts).map(x=>ts[x].rn=[...x].reverse().join(''));
         return ts;
     })();
@@ -102,7 +103,7 @@ const WimUI=()=>{
         text_object:leaf
     });
 
-    const chord_check=(n)=>{
+    const chord_check=(n)=>{/* Input => Chord? */
         let mod=n.KS[3][0]; if(mod){
             let kc=Array.from(n.KC);
             for(let x in chord){
@@ -114,7 +115,7 @@ const WimUI=()=>{
         } return null;
     };
 
-    const seq_check=(n)=>{
+    const seq_check=(n)=>{/* Input => Sequence? */
         let nst=n.KS[0].join(''), dts=n.KS[2],
             dtc=(dt,x)=>{
                 let snds=dts.slice(1);
@@ -131,25 +132,45 @@ const WimUI=()=>{
     let current=[], stt=st();
     const state_reset=()=>{stt=st(); current=[];};
     const state_match=(e)=>{
-        if(stt[e]){
-            current.push(e);
-            if(stt[e]==leaf){return 1;}
-            else{stt=stt[e];}
-        } return 0;
+        if(e.act){
+            let ea=e.act;
+            if(stt[ea]){
+                current.push(ea);
+                if(stt[ea]==leaf){console.log(current); return 1;}
+                else{stt=stt[ea];}
+            }
+        }
+        else{
+            if(stt[e]){
+                current.push(e);
+                console.log(current);
+                if(stt[e]==leaf){return 1;}
+                else{stt=stt[e];}
+            }
+        }
+        return 0;
     };
 
+    const chk=(input,fn)=>{
+        let cki=fn.call(this,input);
+        if(cki){console.log(cki);}
+        return cki && state_match(cki);
+    };
+
+    /* Walk state tree till leaf or nomatch, then reset */
     const update=(input)=>{
-        const [okc,oks]=[chord_check(input),seq_check(input)];
-        console.log(okc);
-        console.log(oks);
-        if(okc && state_match(okc.act)){state_reset();}
-        else if(oks && state_match(oks.act)){state_reset();}
+        if(chk(input,chord_check)){state_reset();}
+        else if(chk(input,seq_check)){state_reset();}
         else{
             const et=atom[input.KS[0][0]]||[];
-            for(let i=0;i<et.length;++i){if(state_match(et[i])){state_reset(); break;}}
+            for(let i=0;i<et.length;++i){
+                if(state_match(et[i])){
+                    state_reset(); break;
+                }
+            }
         }
     };
-    return ({update,st,seq});
+    return ({update,st});
 };
 
 
@@ -158,7 +179,7 @@ const ctx=document.getElementById('c').getContext('2d'),
       wui=WimUI(),
       kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};/* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
 
-const key_handler=(ev,is_keydown)=>{
+const key_handler=(ev,is_keydown)=>{/* encode, then schedule an update using the encoded event */
     kh.KC[is_keydown?'add':'delete'](ev.code);
     if(is_keydown){
         const rk=[ev.key, ev.code, ev.timeStamp|0,
@@ -181,7 +202,7 @@ const render=(lines)=>{
 };
 
 let str="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-const winevts=()=>{
+const winevts=()=>{/* fit to screen */
     const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
     ctx.scale(dpr,dpr);
     [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
