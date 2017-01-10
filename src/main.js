@@ -7,20 +7,22 @@ const WimUI=()=>{
     'C-v':{act:'visual',code:'KeyV',mods:[2]}};
 
   const seq=(()=>{/* {Seq:{Action,ReverseName,MsBetween?}} */
-    const ts={
+    let t={
       fd:{act:'escape',dt:200},
       asdf:{act:'escape',dt:200},
-      dd:{act:'verb'},
-      gg:{act:'text_object'},
+      cc:{act:'phrase'},
+      dd:{act:'phrase'},
+      yy:{act:'phrase'},
+      gg:{act:'phrase'},
       cs:{act:'csurround'},
       ds:{act:'dsurround'},
       ys:{act:'ysurround'}};
-    Object.keys(ts).map(x=>ts[x].rn=[...x].reverse().join(''));
-    return ts;
+    Object.keys(t).map(x=>t[x].rn=[...x].reverse().join(''));
+    return t;
   })();
 
   const atom=(()=>{/* {Char:[Type]} */
-    let xs={/* begins as {Type:[Char]} */
+    let xs={
       ascii:'',
       bracket:'[{()}]',
       edit:'oOpPrxX',
@@ -34,73 +36,45 @@ const WimUI=()=>{
       search:'/?',
       tag:' 0123456789=:-',
       tag_end:'/>',
+      tag_start:'t',
       text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
       undo:'u',
       verb:'cdy',
       visual:'vV'
-    };let sfc=String.fromCharCode;
-    for(let i=32;i<127;++i){xs.ascii+=sfc(i);}
-    for(let i=65;i<90;++i){xs.tag+=sfc(i);}
-    for(let i=97;i<122;++i){xs.tag+=sfc(i);}
-    let t={};for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}t.Escape=['escape'];
+    };
+    [[32,127,xs.ascii],[65,90,xs.tag],[97,122,xs.tag]].map(([a,b,o])=>{for(let i=a;i<b;++i){o+=String.fromCharCode(i);}});
+    let t={};for(let x in xs){[...xs[x]].map(y=>t[y]?t[y].push(x):t[y]=[x]);}t.Escape=['escape'];
     return t;
   })();
 
   const leaf=1;
   const st=(n=0)=>{/* State Tree */
-    let modn=(x)=>{
+    const bt=({bracket: leaf, tag_start:{tag:{tag_end:leaf}}});
+    return((x)=>{
       if(n==1){delete x.mult_0; Object.defineProperty(x,'mult_N',{get:function(){return this;}});}
       return x;
-    };
-    return modn({
+    })({
+      get mult_0(){return st(1);},
       escape:leaf,
       motion:leaf,
       phrase:leaf,
       text_object:leaf,
-      get mult_0(){return st(1);},
       seek:{ascii:leaf},
       verb:{
-        modifier:{
-          seek:{ascii:leaf},
-          text_object:leaf},
         motion:leaf,
-        seek:{ascii:leaf},
+        phrase:leaf,
         text_object:leaf,
-        csurround:{
-          bracket:{
-            bracket:leaf,
-            tag:{tag_end:leaf}},
-          tag:{
-            bracket:leaf,
-            tag_end:leaf}},
-        dsurround:{
-          bracket:leaf,
-          tag:{tag_end:leaf}},
+        seek:{ascii:leaf},
+        modifier:{seek:{ascii:leaf}, text_object:leaf},
+        csurround:{bracket:bt, tag_start:bt},
+        dsurround:bt,
         ysurround:{
-          bracket:{
-            bracket:leaf,
-            tag:{tag_end:leaf}},
-          modifier:{
-            seek:{
-              ascii:{
-                bracket:leaf,
-                tag:{tag_end:leaf}}},
-            motion:{
-              bracket:leaf,
-              tag:{tag_end:leaf}},
-            text_object:{
-              bracket:leaf,
-              tag:{tag_end:leaf}}},
-          motion:{
-            bracket:leaf,
-            tag:{tag_end:leaf}},
-          seek:{
-            ascii:{
-              bracket:leaf,
-              tag:{tag_end:leaf}}},
-          text_object:{
-            bracket:leaf,
-            tag:{tag_end:leaf}}}
+          bracket:bt,
+          modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
+          motion:bt,
+          seek:{ascii:bt},
+          text_object:bt
+        }
       }
     });
   };
@@ -125,21 +99,26 @@ const WimUI=()=>{
         dtc=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
       let s=seq[x];
-      if(nst.startsWith(s.rn) && dtc(s)){
-        return s;
-      }
+      if(nst.startsWith(s.rn) && dtc(s)){return s;}
+    } return null;
+  };
+
+  const atom_check=(n)=>{
+    const et=atom[n.KS[0][0]]||[], ns=Object.getOwnPropertyNames(stt);
+    for(let i=0;i<et.length;++i){
+      if(ns.indexOf(et[i])>-1){return et[i];}
     } return null;
   };
 
   let current=[], stt=st();
-  const state_reset=()=>{stt=st(); current=[];};
+  const state_reset=()=>{console.log('<reset>'); stt=st(); current=[];};
 
-  const state_match=(e)=>{
+  const isleaf=(e)=>{
     let x=e.act||e, y=stt[x];
-    if(x=='escape'){return 1;}
+    if(x=='escape'){console.log('<esc>');return 1;}
     if(y){
       current.push(x);
-      console.log(`[${current}] ${Object.keys(y).join(' ')}`);
+      console.log(`(${current}) (${Object.getOwnPropertyNames(y).join(' ')})`);
       if(y==leaf){return 1;}
       else{stt=y;}
     }
@@ -148,26 +127,20 @@ const WimUI=()=>{
 
   const chk=(input,fn)=>{
     let cki=fn(input);
-    if(cki){console.log(cki);}
-    return cki && state_match(cki);
+    return cki && isleaf(cki);
   };
 
-  /* Walk state tree till leaf or nomatch, then reset */
+  /* walk_tree; if(invalid|leaf)reset; */
   const update=(input)=>{
-    if(chk(input,chord_check)){state_reset();}
-    else if(chk(input,seq_check)){state_reset();}
+    if(chk(input,chord_check) || chk(input,seq_check)){state_reset();}
     else{
-      const et=atom[input.KS[0][0]]||[];
-      for(let i=0;i<et.length;++i){
-        if(state_match(et[i])){
-          state_reset(); break;
-        }
-      }
+      let cki=atom_check(input);
+      if(!cki || cki && isleaf(cki)){state_reset();}
     }
   };
 
-  const getstt=()=>stt;
-  return ({atom,update,getstt});
+  const gs=()=>Object.getOwnPropertyNames(stt);
+  return ({update,gs});
 };
 
 
@@ -183,10 +156,10 @@ const key_handler=(ev,is_keydown)=>{/* encode, then schedule an update using the
     const rk=[ev.key, ev.code, ev.timeStamp|0,
               ['altKey','ctrlKey','metaKey','shiftKey']
               .reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
-          /* ev.preventDefault() unless match */
-          pd={'KeyI':[5,10],/* (Ctrl|Cmd-Opt)-i */
-              'KeyR':[2,4]/* (Ctrl|Cmd)-r */
-             }[rk[1]];pd?pd.every(m=>rk[3]!==m):true&&ev.preventDefault();
+          pd={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];
+    /* ev.preventDefault() except above */
+    if(pd && pd[navigator.platform=='MacIntel'|0]==rk[3]){return;}
+    ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
     requestAnimationFrame((ms)=>{wui.update(kh);});
   }
