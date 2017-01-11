@@ -1,12 +1,12 @@
 const WimUI=()=>{
-  const chord={/* Chord:{Action,KeyCode,[Mods]} */
+  const chord={/* ChordName:{Action,KeyCode,[Mods]} */
     'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
     'C-g':{act:'escape',code:'KeyG',mods:[2]},
     'C-d':{act:'motion',code:'KeyD',mods:[2]},
     'C-u':{act:'motion',code:'KeyU',mods:[2]},
     'C-v':{act:'visual',code:'KeyV',mods:[2]}};
 
-  const seq=(()=>{/* {Seq:{Action,ReverseName,MsBetween?}} */
+  const seq=(()=>{/* {String:{Action,ReverseName,MsBetween?}} */
     let t={
       fd:{act:'escape',dt:200},
       asdf:{act:'escape',dt:200},
@@ -42,8 +42,8 @@ const WimUI=()=>{
       verb:'cdy',
       visual:'vV'
     };
-    [[xs.ascii,32,127],[xs.tag,65,90],[xs.tag,97,122]]
-      .forEach(([o,x,y])=>{for(let i=x;i<y;++i){o+=String.fromCharCode(i);}});
+    [['ascii',32,127],['tag',65,90],['tag',97,122]]
+      .forEach(([o,x,y])=>{for(let i=x;i<y;++i){xs[o]+=String.fromCharCode(i);}});
     let t={};
     for(let x in xs){[...xs[x]].map(y=>t[y]?t[y].push(x):t[y]=[x]);}
     t.Escape=['escape'];
@@ -75,7 +75,7 @@ const WimUI=()=>{
               seek:{ascii:leaf},
               modifier:{seek:{ascii:leaf}, text_object:leaf},
               csurround:{bracket:bt, tag_start:bt},
-              dsurround:{bracket:leaf},// , tag_start:leaf},
+              dsurround:{bracket:leaf, tag_start:leaf},
               ysurround:{
                 bracket:bt,
                 modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
@@ -89,9 +89,9 @@ const WimUI=()=>{
   };
 
   let current=[], stt=st();
-  const reset=()=>{stt=st(); current=[];};
+  const reset=()=>{console.log('<rst>'); stt=st(); current=[];};
 
-  const chord_m=(n)=>{/* Input => Maybe Chord */
+  const chord_or_null=(n)=>{/* Input => Maybe Chord */
     let mod=n.KS[3][0];
     if(mod){
       let kc=Array.from(n.KC);
@@ -104,7 +104,7 @@ const WimUI=()=>{
     } return null;
   };
 
-  const seq_m=(n)=>{/* Input => Maybe Sequence */
+  const seq_or_null=(n)=>{/* Input => Maybe Sequence */
     let nst=n.KS[0].join(''), dts=n.KS[2], snds=dts.slice(1),
         dtc=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
@@ -112,32 +112,35 @@ const WimUI=()=>{
     } return null;
   };
 
-  const atom_m=(n)=>{/* Input => Maybe Atom */
+  const atom_or_null=(n)=>{/* Input => Maybe Atom */
     const et=atom[n.KS[0][0]]||[], ns=Object.getOwnPropertyNames(stt);
     for(let i=0,l=et.length;i<l;++i){
       if(ns.indexOf(et[i])>-1){return et[i];}
     } return null;
   };
 
-  const leaf_p=(e)=>{/* (Chord|Seq|Atom) => Bool Leaf */
+  const should_reset=(e)=>{
     let x=e.act||e, y=stt[x];
     if(x=='escape'){return 1;}
     if(y){
       current.push(x);
       console.log(`(${current}) (${Object.getOwnPropertyNames(y).join(' ')})`);
       if(y==leaf){return 1;}
-      else{stt=y;}
+      else{stt=y;} /* TODO -- move shameful side effect to caller */
     } return 0;
   };
 
-  const chk=(input,fn,cki=fn(input))=>cki && leaf_p(cki); /* Input -> Maybe (Chord|Seq|Atom) => Bool */
+  const chk=(input,fn)=>{/* Input -> Maybe (Chord|Seq|Atom) => Bool */
+    let cki=fn(input);
+    return cki && should_reset(cki);
+  };
 
   const update=(input)=>{/* walk_tree; (invalid || leaf) && reset */
-    if(chk(input,chord_m) || chk(input,seq_m)){reset();}
-    else{
-      let cki=atom_m(input);
-      if(!cki || cki && leaf_p(cki)){reset();}
-    }
+    if(chk(input,chord_or_null)){reset();return;}
+    if(chk(input,seq_or_null)){reset();return;}
+    let cki=atom_or_null(input);
+    if(!cki && input.KS[3][0]){return;}
+    if(cki && should_reset(cki)){reset();}
   };
   return({update,seq,atom,chord});
 };
@@ -148,13 +151,13 @@ const ctx=document.getElementById('c').getContext('2d'), /* Canvas */
       wui=WimUI(), /* UI Interface */
       kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10}; /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
 
-const key_handler=(ev,up)=>{/* encode, then schedule an update using the encoded event */
+const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
   kh.KC[up?'delete':'add'](ev.code); if(up){return;}
   const rk=[ev.key, ev.code, ev.timeStamp|0,
             ['altKey','ctrlKey','metaKey','shiftKey']
             .reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
         ad={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];/* allowDefault() */
-  if(ad && ad[~~navigator.platform=='MacIntel']==rk[3]){return;}
+  if(ad && ad[navigator.platform=='MacIntel'|0]==rk[3]){return;}
   ev.preventDefault();
   rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
   requestAnimationFrame((ms)=>{wui.update(kh);});
@@ -166,6 +169,7 @@ const render=(lines)=>{/* testing */
 };
 
 let str="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+
 const rsz=()=>{/* fit to screen */
   const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
   ctx.scale(dpr,dpr);
@@ -175,6 +179,7 @@ const rsz=()=>{/* fit to screen */
   ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
   render(str);
 };
+
 window.addEventListener('keydown',(e)=>key_handler(e,0));
 window.addEventListener('keyup',(e)=>key_handler(e,1));
 window.addEventListener('load',rsz);
