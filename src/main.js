@@ -130,7 +130,6 @@ const WimUI=()=>{
     const walk=(...fns)=>{
       for(let i=0;i<fns.length;++i){
         let c=fns[i](input);
-        console.log([i,c]);
         if(c){
           let d=check_tree(c);
           if(d==branch){return 1;}
