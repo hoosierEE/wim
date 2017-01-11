@@ -4,19 +4,20 @@ const WimUI=()=>{
     'C-g':{act:'escape',code:'KeyG',mods:[2]},
     'C-d':{act:'motion',code:'KeyD',mods:[2]},
     'C-u':{act:'motion',code:'KeyU',mods:[2]},
-    'C-v':{act:'visual',code:'KeyV',mods:[2]}};
+    'C-v':{act:'visual',code:'KeyV',mods:[2]}
+  };
 
   const seq=(()=>{/* {String:{Action,ReverseName,MsBetween?}} */
     let t={
       fd:{act:'escape',dt:200},
-      asdf:{act:'escape',dt:200},
       cc:{act:'phrase'},
       dd:{act:'phrase'},
       yy:{act:'phrase'},
       gg:{act:'phrase'},
       cs:{act:'csurround'},
       ds:{act:'dsurround'},
-      ys:{act:'ysurround'}};
+      ys:{act:'ysurround'}
+    };
     for(let x in t){t[x].rn=[...x].reverse().join('');}
     return t;
   })();
@@ -50,42 +51,36 @@ const WimUI=()=>{
     return t;
   })();
 
-  const leaf=1;
+  const leaf=1, branch=2;
   const st=(n=0)=>{/* State Tree */
-    const bt=({bracket: leaf, tag_start:{tag:{tag_end:leaf}}}),
-          build=(x)=>{
-            if(n==1){
-              delete x.mult_0;
-              Object.defineProperty(x,'mult_N',{
-                get:function(){return this;}
-              });
-            } return x;
-          },
-          t=({
-            get mult_0(){return st(1);},
-            escape:leaf,
-            motion:leaf,
-            phrase:leaf,
-            text_object:leaf,
-            seek:{ascii:leaf},
-            verb:{
-              motion:leaf,
-              phrase:leaf,
-              text_object:leaf,
-              seek:{ascii:leaf},
-              modifier:{seek:{ascii:leaf}, text_object:leaf},
-              csurround:{bracket:bt, tag_start:bt},
-              dsurround:{bracket:leaf, tag_start:leaf},
-              ysurround:{
-                bracket:bt,
-                modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
-                motion:bt,
-                seek:{ascii:bt},
-                text_object:bt
-              }
-            }
-          });
-    return build(t);
+    const bt=({bracket: leaf, tag_start:{get tag(){return this;}, tag_end:leaf}});
+    return((x)=>{
+      if(n==1){
+        delete x.mult_0;
+        Object.defineProperty(x,'mult_N',{get:function(){return this;}});
+      } return x;
+    })({
+      get mult_0(){return st(1);},
+      escape:leaf,
+      motion:leaf,
+      phrase:leaf,
+      text_object:leaf,
+      seek:{ascii:leaf},
+      verb:{
+        motion:leaf,
+        phrase:leaf,
+        text_object:leaf,
+        seek:{ascii:leaf},
+        modifier:{seek:{ascii:leaf}, text_object:leaf},
+        csurround:{bracket:bt, tag_start:bt},
+        dsurround:{bracket:leaf, tag_start:leaf},
+        ysurround:{
+          bracket:bt,
+          modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
+          motion:bt,
+          seek:{ascii:bt},
+          text_object:bt}
+      }});
   };
 
   let current=[], stt=st();
@@ -97,9 +92,9 @@ const WimUI=()=>{
       let kc=Array.from(n.KC);
       for(let x in chord){
         let i=chord[x],
-            has_key=kc.indexOf(i.code)>-1,
-            has_mod=(0>i.mods)||i.mods.some(y=>y==mod);
-        if(has_mod && has_key){i.name=x; return i;}
+            keyp=kc.indexOf(i.code)>-1,
+            modp=(0>i.mods)||i.mods.some(y=>y==mod);
+        if(modp && keyp){i.name=x; return i;}
       }
     } return null;
   };
@@ -119,30 +114,35 @@ const WimUI=()=>{
     } return null;
   };
 
-  const should_reset=(e)=>{
+  /* Input => (leaf|branch|null) */
+  const check_tree=(e)=>{
     let x=e.act||e, y=stt[x];
-    if(x=='escape'){return 1;}
+    if(x=='escape'){return null;}
     if(y){
       current.push(x);
       console.log(`(${current}) (${Object.getOwnPropertyNames(y).join(' ')})`);
-      if(y==leaf){return 1;}
-      else{stt=y;} /* TODO -- move shameful side effect to caller */
-    } return 0;
+      if(y==leaf){return leaf;}
+      else{stt=y; return branch;} /* TODO -- move shameful side effect to caller */
+    } return null;
   };
 
-  const chk=(input,fn)=>{/* Input -> Maybe (Chord|Seq|Atom) => Bool */
-    let cki=fn(input);
-    return cki && should_reset(cki);
+  const update=(input)=>{/* process input, walk tree, maybe reset */
+    const walk=(...fns)=>{
+      for(let i=0;i<fns.length;++i){
+        let c=fns[i](input);
+        console.log([i,c]);
+        if(c){
+          let d=check_tree(c);
+          if(d==branch){return 1;}
+          if(d==leaf){reset(); return 0;}
+        }
+      } return 0;
+    };
+    if(walk(chord_or_null,seq_or_null,atom_or_null)){return;}
+    if(input.KS[3][0]){return;}
+    reset();
   };
-
-  const update=(input)=>{/* walk_tree; (invalid || leaf) && reset */
-    if(chk(input,chord_or_null)){reset();return;}
-    if(chk(input,seq_or_null)){reset();return;}
-    let cki=atom_or_null(input);
-    if(!cki && input.KS[3][0]){return;}
-    if(cki && should_reset(cki)){reset();}
-  };
-  return({update,seq,atom,chord});
+  return({update});
 };
 
 
