@@ -79,67 +79,61 @@ const WimUI=()=>{
           modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
           motion:bt,
           seek:{ascii:bt},
-          text_object:bt}
-      }});
+          text_object:bt}}});
   };
 
   let current=[], stt=st();
   const reset=()=>{console.log('<rst>'); stt=st(); current=[];};
 
-  const chord_or_null=(n)=>{/* Input => Maybe Chord */
-    let mod=n.KS[3][0];
-    if(mod){
-      let kc=Array.from(n.KC);
-      for(let x in chord){
-        let i=chord[x],
-            keyp=kc.indexOf(i.code)>-1,
-            modp=(0>i.mods)||i.mods.some(y=>y==mod);
-        if(modp && keyp){i.name=x; return i;}
-      }
+  const maybe_chord=(n)=>{
+    let mod=n.KS[3][0]; if(!mod){return null;}
+    let kc=Array.from(n.KC);
+    for(let x in chord){
+      let i=chord[x], keyp=kc.indexOf(i.code)>-1, modp=i.mods.some(y=>y==mod);
+      if(modp && keyp){return i;}
     } return null;
   };
 
-  const seq_or_null=(n)=>{/* Input => Maybe Sequence */
+  const maybe_seq=(n)=>{
     let nst=n.KS[0].join(''), dts=n.KS[2], snds=dts.slice(1),
-        dtc=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
+        dtc=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x),
+        behead=(len)=>{n.KS.forEach(x=>{[...x].forEach(()=>x.shift());});};
     for(let x in seq){
-      let s=seq[x]; if(nst.startsWith(s.rn) && dtc(s)){return s;}
+      let s=seq[x]; if(nst.startsWith(s.rn) && dtc(s)){behead(s.rn.length); return s;}
     } return null;
   };
 
-  const atom_or_null=(n)=>{/* Input => Maybe Atom */
-    const et=atom[n.KS[0][0]]||[], ns=Object.getOwnPropertyNames(stt);
-    for(let i=0,l=et.length;i<l;++i){
-      if(ns.indexOf(et[i])>-1){return et[i];}
+  const maybe_atom=(n)=>{
+    const e=atom[n.KS[0][0]]||[], ns=Object.getOwnPropertyNames(stt);
+    for(let i=0;i<e.length;++i){
+      if(ns.indexOf(e[i])>-1){return e[i];}
     } return null;
   };
 
   /* Input => (leaf|branch|null) */
   const check_tree=(e)=>{
-    let x=e.act||e, y=stt[x];
-    if(x=='escape'){return null;}
+    let y=stt[e];
     if(y){
-      current.push(x);
+      current.push(e);
       console.log(`(${current}) (${Object.getOwnPropertyNames(y).join(' ')})`);
       if(y==leaf){return leaf;}
       else{stt=y; return branch;} /* TODO -- move shameful side effect to caller */
     } return null;
   };
 
-  const update=(input)=>{/* process input, walk tree, maybe reset */
-    const walk=(...fns)=>{
-      for(let i=0;i<fns.length;++i){
-        let c=fns[i](input);
-        if(c){
-          let d=check_tree(c);
-          if(d==branch){return 1;}
-          if(d==leaf){reset(); return 0;}
-        }
-      } return 0;
-    };
-    if(walk(chord_or_null,seq_or_null,atom_or_null)){return;}
-    if(input.KS[3][0]){return;}
-    reset();
+  /* process input, walk tree, maybe reset */
+  const update=(input)=>{
+    let c=null,fns=[maybe_chord,maybe_seq,maybe_atom];
+    for(let i in fns){
+      c=fns[i](input);
+      if(c){
+        if('escape'==c.act){reset(); return;}
+        c=check_tree(c.act||c);
+      }
+      if(c==leaf){reset(); return;}
+      if(c==branch){return;}
+    }
+    if(null==c && 0==input.KS[3][0]){reset(); return;}
   };
   return({update});
 };
@@ -162,21 +156,23 @@ const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an 
   requestAnimationFrame((ms)=>{wui.update(kh);});
 };
 
-const render=(lines)=>{/* testing */
+/* testing */
+const render=(lines)=>{
   ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
   let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
 };
 
-let str="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
+const demo_string="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
-const rsz=()=>{/* fit to screen */
+/* fit to screen */
+const rsz=()=>{
   const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
   ctx.scale(dpr,dpr);
   [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
   [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
   /* fonts AFTER canvas mod */
   ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
-  render(str);
+  render(demo_string);
 };
 
 window.addEventListener('keydown',(e)=>key_handler(e,0));
