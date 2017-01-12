@@ -51,7 +51,7 @@ const WimUI=()=>{
     return t;
   })();
 
-  const leaf=1, branch=2;
+  const leaf=1, branch=2, nomatch=3;
   const st=(n=0)=>{/* State Tree */
     const bt=({bracket: leaf, tag_start:{get tag(){return this;}, tag_end:leaf}});
     return((x)=>{
@@ -110,15 +110,15 @@ const WimUI=()=>{
     } return null;
   };
 
-  /* Input => (leaf|branch|null) */
+  /* Input => (leaf|branch|nomatch) */
   const check_tree=(e)=>{
     let y=stt[e];
     if(y){
       current.push(e);
-      console.log(`(${current}) (${Object.getOwnPropertyNames(y).join(' ')})`);
+      console.log(`(${current.join(' ')}) (${Object.getOwnPropertyNames(y).join(' ')})`);
       if(y==leaf){return leaf;}
       else{stt=y; return branch;} /* TODO -- move shameful side effect to caller */
-    } return null;
+    } return nomatch;
   };
 
   /* process input, walk tree, maybe reset */
@@ -128,12 +128,14 @@ const WimUI=()=>{
       c=fns[i](input);
       if(c){
         if('escape'==c.act){reset(); return;}
+        // console.log(c);
         c=check_tree(c.act||c);
+        // console.log(c);
       }
       if(c==leaf){reset(); return;}
       if(c==branch){return;}
     }
-    if(null==c && 0==input.KS[3][0]){reset(); return;}
+    if(0==input.KS[3][0]){reset(); return;}
   };
   return({update});
 };
