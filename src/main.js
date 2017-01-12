@@ -83,7 +83,7 @@ const WimUI=()=>{
   };
 
   let current=[], stt=st();
-  const reset=()=>{console.log('<rst>'); stt=st(); current=[];};
+  const reset=()=>{stt=st(); current=[];};
 
   const maybe_chord=(n)=>{
     let mod=n.KS[3][0]; if(!mod){return null;}
@@ -123,31 +123,34 @@ const WimUI=()=>{
 
   /* process input, walk tree, maybe reset */
   const update=(input)=>{
-    let c=null,fs=[maybe_chord,maybe_seq];
+    let s=({cont:'cont',done:'done',error:'error',ignore:'ignore',quit:'quit'}),
+        c=null, fs=[maybe_chord,maybe_seq];
     for(let f in fs){
-      if((c=fs[f](input))){ /* matched (chord|seq) */
-        if('escape'==c.act){reset(); return;}
-
+      if((c=fs[f](input))){
+        if('escape'==c.act){reset(); return s.quit;}
         c=check_tree(c.act||c);
-        if(c==branch){return;} /* carry on */
-        if(c==leaf || c==nomatch){reset(); return;}
+        if(c==nomatch){reset(); return s.error;}
+        if(c==leaf){reset(); return s.done;}
+        if(c==branch){return s.cont;}
       }
     }
-    if((c=maybe_atom(input))){if(branch==check_tree(c)){return;}}
-    if(input.KS[3][0]){return;} /* only modifiers */
-    reset();
+    if((c=maybe_atom(input)) && (branch==(c=check_tree(c)))){return s.cont;}
+    if(c==leaf){reset(); return s.done;}
+    if(input.KS[3][0]){return s.cont;}
+    reset(); return s.error;
   };
   return({update});
 };
-
-
-
 
 
 /* Impl */
 const ctx=document.getElementById('c').getContext('2d'), /* Canvas */
       wui=WimUI(), /* UI Interface */
       kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10}; /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
+
+const updater=(t)=>{
+  console.log(wui.update(kh));
+};
 
 const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
   kh.KC[up?'delete':'add'](ev.code); if(up){return;}
@@ -158,7 +161,7 @@ const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an 
   if(ad && ad[navigator.platform=='MacIntel'|0]==rk[3]){return;}
   ev.preventDefault();
   rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
-  requestAnimationFrame((ms)=>{wui.update(kh);});
+  requestAnimationFrame(updater);
 };
 
 /* testing */
