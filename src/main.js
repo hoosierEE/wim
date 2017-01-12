@@ -123,22 +123,25 @@ const WimUI=()=>{
 
   /* process input, walk tree, maybe reset */
   const update=(input)=>{
-    let c=null,fns=[maybe_chord,maybe_seq,maybe_atom];
-    for(let i in fns){
-      c=fns[i](input);
-      if(c){
+    let c=null,fs=[maybe_chord,maybe_seq];
+    for(let f in fs){
+      if((c=fs[f](input))){ /* matched (chord|seq) */
         if('escape'==c.act){reset(); return;}
-        // console.log(c);
+
         c=check_tree(c.act||c);
-        // console.log(c);
+        if(c==branch){return;} /* carry on */
+        if(c==leaf || c==nomatch){reset(); return;}
       }
-      if(c==leaf){reset(); return;}
-      if(c==branch){return;}
     }
-    if(0==input.KS[3][0]){reset(); return;}
+    if((c=maybe_atom(input))){if(branch==check_tree(c)){return;}}
+    if(input.KS[3][0]){return;} /* only modifiers */
+    reset();
   };
   return({update});
 };
+
+
+
 
 
 /* Impl */
