@@ -47,7 +47,7 @@ const WimUI=()=>{
       .forEach(([o,x,y])=>{for(let i=x;i<y;++i){xs[o]+=String.fromCharCode(i);}});
     let t={};
     for(let x in xs){[...xs[x]].map(y=>t[y]?t[y].push(x):t[y]=[x]);}
-    t.Escape=['escape'];
+    t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
     return t;
   })();
 
@@ -86,10 +86,10 @@ const WimUI=()=>{
   const reset=()=>{stt=st(); current=[];};
 
   const maybe_chord=(n)=>{
-    let mod=n.KS[3][0]; if(!mod){return null;}
-    let kc=Array.from(n.KC);
+    let m=n.KS[3][0]; if(!m){return null;}
+    let kc=Array.from(n.KC); if(kc.length<2){return null;}
     for(let x in chord){
-      let i=chord[x], keyp=kc.indexOf(i.code)>-1, modp=i.mods.some(y=>y==mod);
+      let i=chord[x], keyp=kc.indexOf(i.code)>-1, modp=i.mods.some(y=>y==m);
       if(modp && keyp){return i;}
     } return null;
   };
@@ -97,16 +97,16 @@ const WimUI=()=>{
   const maybe_seq=(n)=>{
     let nst=n.KS[0].join(''), dts=n.KS[2], snds=dts.slice(1),
         dtc=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x),
-        behead=(len)=>{n.KS.forEach(x=>{[...x].forEach(()=>x.shift());});};
+        behead=(sl)=>{n.KS.forEach(x=>{for(let i=0;i<sl;++i){x.shift();}});};
     for(let x in seq){
       let s=seq[x]; if(nst.startsWith(s.rn) && dtc(s)){behead(s.rn.length); return s;}
     } return null;
   };
 
   const maybe_atom=(n)=>{
-    const e=atom[n.KS[0][0]]||[], ns=Object.getOwnPropertyNames(stt);
+    const e=atom[n.KS[0][0]]||[], m=n.KS[3][0], ns=Object.getOwnPropertyNames(stt);
     for(let i=0;i<e.length;++i){
-      if(ns.indexOf(e[i])>-1){return e[i];}
+      if((m==0 || m==8) && ns.indexOf(e[i])>-1){return e[i];}
     } return null;
   };
 
@@ -121,25 +121,35 @@ const WimUI=()=>{
     } return nomatch;
   };
 
-  /* process input, walk tree, maybe reset */
   const update=(input)=>{
-    let s=({cont:'cont',done:'done',error:'error',ignore:'ignore',quit:'quit'}),
-        c=null, fs=[maybe_chord,maybe_seq];
+    let s=({c:'continue',d:'done',e:'error',i:'ignore',q:'quit'}),
+        c=null, fs=[maybe_chord,maybe_seq], m=input.KS[3][0],
+        res=(x,y=0)=>{if(y){reset();} return x;};
+
     for(let f in fs){
       if((c=fs[f](input))){
-        if('escape'==c.act){reset(); return s.quit;}
+        if('escape'==c.act){return res(s.q,1);}
         c=check_tree(c.act||c);
-        if(c==nomatch){reset(); return s.error;}
-        if(c==leaf){reset(); return s.done;}
-        if(c==branch){return s.cont;}
+        if(c==nomatch){return res(s.e,1);}
+        if(c==leaf){return res(s.d,1);}
+        if(c==branch){return res(s.c);}
       }
     }
-    if((c=maybe_atom(input)) && (branch==(c=check_tree(c)))){return s.cont;}
-    if(c==leaf){reset(); return s.done;}
-    if(input.KS[3][0]){return s.cont;}
-    reset(); return s.error;
+
+    if((c=maybe_atom(input))){
+      c=check_tree(c);
+      if(c==nomatch){return res(s.e,1);}
+      if(c==leaf){return res(s.d,1);}
+      if(c==branch){return res(s.c);}
+    }
+
+    let a=atom[input.KS[0][0]];
+    if(a && 0<=a.indexOf('ascii')){return res(s.e,1);}
+    if(m){return res(s.i);}
+    return res(s.e,1);
   };
-  return({update});
+
+  return({update,atom});
 };
 
 
@@ -149,7 +159,7 @@ const ctx=document.getElementById('c').getContext('2d'), /* Canvas */
       kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10}; /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
 
 const updater=(t)=>{
-  console.log(wui.update(kh));
+  let u=wui.update(kh);
 };
 
 const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
