@@ -121,6 +121,7 @@ const WimUI=()=>{
     } return nomatch;
   };
 
+
   const update=(input)=>{
     let s=({c:'continue',d:'done',e:'error',i:'ignore',q:'quit'}),
         c=null, fs=[maybe_chord,maybe_seq,maybe_atom],
@@ -136,14 +137,14 @@ const WimUI=()=>{
       }
     }
 
-    let a=atom[input.KS[0][0]];
-    if(a && 0<=a.indexOf('ascii')){return r(s.e,1);}
+    /* when is a chord not a chord? */
+    if((c=atom[input.KS[0][0]]) && 0<=c.indexOf('ascii')){return r(s.e,1);}
     if(input.KS[3][0]){return r(s.i);}
     return r(s.e,1);
   };
-
   return({update});
 };
+
 
 
 /* Impl */
