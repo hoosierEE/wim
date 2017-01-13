@@ -115,7 +115,7 @@ const WimUI=()=>{
     let y=stt[e];
     if(y){
       current.push(e);
-      console.log(`(${current.join(' ')}) (${Object.getOwnPropertyNames(y).join(' ')})`);
+      // console.log(`(${current.join(' ')}) (${Object.getOwnPropertyNames(y).join(' ')})`);
       if(y==leaf){return leaf;}
       else{stt=y; return branch;} /* TODO -- move shameful side effect to caller */
     } return nomatch;
@@ -147,14 +147,10 @@ const WimUI=()=>{
 
 
 /* Impl */
-const ctx=document.getElementById('c').getContext('2d'), /* Canvas */
-      wui=WimUI(), /* UI Interface */
-      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10}; /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
-
-const updater=(t)=>{
-  let u=wui.update(kh);
-  console.log(u);
-};
+const ctx=document.getElementById('c').getContext('2d'),
+      wui=WimUI(),
+      /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
+      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
 
 const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
   kh.KC[up?'delete':'add'](ev.code); if(up){return;}
@@ -165,7 +161,8 @@ const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an 
   if(ad && ad[navigator.platform=='MacIntel'|0]==rk[3]){return;}
   ev.preventDefault();
   rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
-  requestAnimationFrame(updater);
+  // requestAnimationFrame((_)=>wui.update(kh));
+  wui.update(kh);
 };
 
 /* testing */
