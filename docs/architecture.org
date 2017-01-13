@@ -1,5 +1,5 @@
 * Event Loop
-In principle Wim works like this pseudocode:
+In principle Wim works like this (pseudocode):
 
 #+BEGIN_SRC pseudocode
 while(true){
@@ -12,10 +12,12 @@ while(true){
 
 But since Wim uses =addEventListener= to consume keyboard events, the =while= loop is implicit.
 
-In reality, Wim responds to each =KeyboardEvent= by placing a callback to the =process_input= and =render_output= functions in its event loop queue, through the use of =requestAnimationFrame=.
+In reality, Wim responds to each =KeyboardEvent= by placing a callback to the =process_input= and =render_output= functions in its event loop queue.
+
+For simple processing, calling the update directly is faster than the overhead of calling =requestAnimationFrame=, but as the program grows, for example with the addition of syntax highlighting, I'll profile this again.
 
 * Command Parsing
-Inputs are classified according to type:
+Inputs are classified according to the type of the token they represent:
 
 #+BEGIN_SRC js
 let input_table=/* {Type:[Char]} */
@@ -38,11 +40,11 @@ Parsing a command depends on past state and can not be determined from the chara
 
 The following type combinations make a valid command (=?= means optional):
 - =mult? verb mult? modifier? text_object= operates on a range defined by a text object
-- =mult? verb mult? search_char char= operates on the range (starting point, =char=)
+- =mult? verb mult? seek char= operates on the range (starting point, =char=)
 - =mult? verb mult? motion= operates on a range defined by (starting point, =motion=)
 - =mult? text_object= moves the cursor
 - =mult? motion= moves the cursor
-- =mult? search_char char= moves the cursor
+- =mult? seek char= moves the cursor
 - =mult? edit= cut/paste =mult?= times
 - =mult? edit char* ESC= edit the document chars =mult?= times
 - =mult? undo= undo as many times as specified by =mult?=
