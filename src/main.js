@@ -90,7 +90,7 @@ const WimUI=()=>{
     let kc=Array.from(n.KC); if(kc.length<2){return null;}
     for(let x in chord){
       let i=chord[x], keyp=kc.indexOf(i.code)>-1, modp=i.mods.some(y=>y==m);
-      if(modp && keyp){return i;}
+      if(modp && keyp){return i.act;}
     } return null;
   };
 
@@ -99,7 +99,7 @@ const WimUI=()=>{
         dtc=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x),
         behead=(sl)=>{n.KS.forEach(x=>{for(let i=0;i<sl;++i){x.shift();}});};
     for(let x in seq){
-      let s=seq[x]; if(nst.startsWith(s.rn) && dtc(s)){behead(s.rn.length); return s;}
+      let s=seq[x]; if(nst.startsWith(s.rn) && dtc(s)){behead(s.rn.length); return s.act;}
     } return null;
   };
 
@@ -123,33 +123,26 @@ const WimUI=()=>{
 
   const update=(input)=>{
     let s=({c:'continue',d:'done',e:'error',i:'ignore',q:'quit'}),
-        c=null, fs=[maybe_chord,maybe_seq], m=input.KS[3][0],
-        res=(x,y=0)=>{if(y){reset();} return x;};
+        c=null, fs=[maybe_chord,maybe_seq,maybe_atom],
+        r=(x,y=0)=>{if(y){reset();} return x;};
 
     for(let f in fs){
       if((c=fs[f](input))){
-        if('escape'==c.act){return res(s.q,1);}
-        c=check_tree(c.act||c);
-        if(c==nomatch){return res(s.e,1);}
-        if(c==leaf){return res(s.d,1);}
-        if(c==branch){return res(s.c);}
+        if('escape'==c){return r(s.q,1);}
+        c=check_tree(c);
+        if(c==nomatch){return r(s.e,1);}
+        if(c==leaf){return r(s.d,1);}
+        if(c==branch){return r(s.c);}
       }
     }
 
-    if((c=maybe_atom(input))){
-      c=check_tree(c);
-      if(c==nomatch){return res(s.e,1);}
-      if(c==leaf){return res(s.d,1);}
-      if(c==branch){return res(s.c);}
-    }
-
     let a=atom[input.KS[0][0]];
-    if(a && 0<=a.indexOf('ascii')){return res(s.e,1);}
-    if(m){return res(s.i);}
-    return res(s.e,1);
+    if(a && 0<=a.indexOf('ascii')){return r(s.e,1);}
+    if(input.KS[3][0]){return r(s.i);}
+    return r(s.e,1);
   };
 
-  return({update,atom});
+  return({update});
 };
 
 
@@ -160,6 +153,7 @@ const ctx=document.getElementById('c').getContext('2d'), /* Canvas */
 
 const updater=(t)=>{
   let u=wui.update(kh);
+  console.log(u);
 };
 
 const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
