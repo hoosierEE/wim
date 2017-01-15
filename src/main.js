@@ -42,7 +42,8 @@ const WimUI=()=>{
       visual:'vV'
     }; [['ascii',32,127],['tag',65,90],['tag',97,122]]
           .forEach(([o,x,y])=>{for(let i=x;i<y;++i){xs[o]+=String.fromCharCode(i);}});
-    let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
+    let t={};
+    for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab']; return t;
   })();
 
@@ -61,6 +62,7 @@ const WimUI=()=>{
       phrase:leaf,
       text_object:leaf,
       seek:{ascii:leaf},
+      visual:leaf,
       verb:{
         motion:leaf,
         phrase:leaf,
@@ -77,80 +79,88 @@ const WimUI=()=>{
           text_object:bt}}});
   };
 
-  let current=[], stt=st();
-  const reset=()=>{stt=st(); current=[];};
+  let stt=st(), types=[], vals={keys:[],mods:[]};
+  const reset=()=>{stt=st(); types=[], vals={keys:[],mods:[]};};
 
   const maybe_chord=(n)=>{
     const m=n.KS[3][0]; if(!m){return null;}
     const kc=Array.from(n.KC); if(kc.length<2){return null;}
     for(let x in chord){
-      let i=chord[x], keyp=kc.indexOf(i.code)>-1, modp=i.mods.some(y=>y==m);
-      if(modp && keyp){return i.act;}
+      let c=chord[x], keyp=kc.includes(c.code), modp=c.mods.some(y=>y==m);
+      if(modp && keyp){return c.act;}
     } return null;
   };
 
   const maybe_seq=(n)=>{
     const nst=n.KS[0].join(''), dts=n.KS[2], snds=dts.slice(1),
           deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x),
-          behead=(sl)=>{n.KS.forEach(x=>{for(let i in sl){x.shift();}});};
+          behead=(sl)=>{while(sl-->0){n.KS.forEach(x=>{x.shift();});};};
     for(let x in seq){
       let s=seq[x]; if(nst.startsWith(s.rn) && deltas(s)){behead(s.rn.length); return s.act;}
     } return null;
   };
 
   const maybe_atom=(n)=>{
-    const e=atom[n.KS[0][0]]||[], m=n.KS[3][0], ns=Object.getOwnPropertyNames(stt);
-      for(let i in e){
-      console.log(e[i]);
-      if((m==0 || m==8) && ns.indexOf(e[i])>-1){return e[i];}
+    const a=atom[n.KS[0][0]]||[], m=n.KS[3][0], ns=Object.getOwnPropertyNames(stt);
+    for(let i in a){
+      if((0===m || 8==m) && ns.includes(a[i])){return a[i];}
     } return null;
   };
 
   /* Input => (leaf|branch|nomatch) */
   const climb_tree=(e)=>{
     let y=stt[e]; if(y){
-      current.push(e);
-      // console.log(`(${current.join(' ')}) (${Object.getOwnPropertyNames(y).join(' ')})`);
+      types.push(e);
+      let nexts=Object.getOwnPropertyNames(y);
+      console.log(`(${types.join(' ')}) (${nexts})`);
       if(y==leaf){return leaf;}
-      stt=y; return branch; /* TODO? */
+      stt=y; return branch;
     } return nomatch;
   };
 
-  const update=(input)=>{
-    let c=null; const fs=[maybe_chord,maybe_seq,maybe_atom],
-        r=(x,y=0)=>{if(y){reset();} return x;};
-    for(let f in fs){
-      if((c=fs[f](input))){
-        if('escape'==c){return r('q',1);}
-        if(nomatch==(c=climb_tree(c))){return r('e',1);}
-        if(leaf==c){return r('d',1);}
-        if(branch==c){return r('c');}
-      }
-    } /* when is a chord not a chord? */
-    if((c=atom[input.KS[0][0]]) && 0<=c.indexOf('ascii')){return r('e',1);}
-    if(input.KS[3][0]){return r('i');}
-    return r('e',1);
+  /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
+  const kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
+  const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
+    kh.KC[up?'delete':'add'](ev.code); if(up){return;}
+    const rk=[ev.key, ev.code, ev.timeStamp|0,
+              ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
+          ad={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];/* allow default */
+    if(ad && ad[navigator.platform=='MacIntel'|0]==rk[3]){return;}
+    ev.preventDefault();
+    rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
+    console.log(wui.update(kh));
   };
-  return({update});
+
+  const R=(x,y,z=0)=>{
+    if(2==z || 3==z){x=({keys:vals.keys,mods:vals.mods,types});}
+    if(1==z || 3==z){reset();}
+    x.status=y; return x;
+  };
+
+  const fs=[maybe_chord,maybe_seq,maybe_atom];
+  const update=(input)=>{
+    let a=null, ret={};
+    for(let f in fs){
+      if((a=fs[f](input))){
+        if('escape'==a){return R(ret,'quit',1);}
+        vals.keys.push(input.KS[0][0]);
+        vals.mods.push(input.KS[3][0]);
+        if(nomatch==(a=climb_tree(a))){return R(ret,'error',1);}
+        if(leaf==a){return R(ret,'done',3);}
+        if(branch==a){return R(ret,'continue',2);}
+      }
+    }
+    if((a=atom[input.KS[0][0]]) && a.includes('ascii')){return R(ret,'error',1);}
+    if(input.KS[3][0]){return R(ret,'ignore');}
+    return R(ret,'error',1);
+  };
+
+  return({update,key_handler});
 };
 
 
 /* Impl */
-const ctx=document.getElementById('c').getContext('2d'),
-      wui=WimUI(),
-      /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
-      kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
-
-const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
-  kh.KC[up?'delete':'add'](ev.code); if(up){return;}
-  const rk=[ev.key, ev.code, ev.timeStamp|0,
-            ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
-        ad={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];/* allowDefault() */
-  if(ad && ad[navigator.platform=='MacIntel'|0]==rk[3]){return;}
-  ev.preventDefault();
-  rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
-  wui.update(kh);
-};
+const ctx=document.getElementById('c').getContext('2d'), wui=WimUI();
 
 /* testing */
 const render=(lines)=>{
@@ -171,7 +181,7 @@ const rsz=()=>{
   render(demo_string);
 };
 
-window.addEventListener('keydown',(e)=>key_handler(e,0));
-window.addEventListener('keyup',(e)=>key_handler(e,1));
+window.addEventListener('keydown',(e)=>wui.key_handler(e,0));
+window.addEventListener('keyup',(e)=>wui.key_handler(e,1));
 window.addEventListener('load',rsz);
 window.addEventListener('resize',rsz);
