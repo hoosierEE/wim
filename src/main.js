@@ -175,7 +175,20 @@ const Wir=(testing=0)=>{
   };
 
   return testing?
-    ({climb_tree,update,key_handler,kh,lt,st,stt,reset,vals})
+    ({
+        atom,
+        chord,
+        seq,
+        vals,
+        climb_tree,
+        update,
+        key_handler,
+        kh,
+        lt,
+        st,
+        stt,
+        reset
+    })
   : ({update,key_handler});
 };
 
@@ -210,7 +223,8 @@ window.addEventListener('resize',rsz);
 
 const run_tests=()=>{
   const wr=Wir(1);
-  console.assert(1);
+  console.assert(['ascii','tag','modifier','insert'].every(x=>wr.atom['a']),'atom has proper types');
+  console.assert(typeof wr.kh === 'object', 'kh is an object');
 };
 
 run_tests();
