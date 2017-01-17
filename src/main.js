@@ -1,9 +1,15 @@
-const WimUI=()=>{
+const Wir=(testing=0)=>{
   const chord={/* ChordName:{Action,KeyCode,[Mods]} */
     'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
     'C-g':{act:'escape',code:'KeyG',mods:[2]},
     'C-d':{act:'motion',code:'KeyD',mods:[2]},
     'C-u':{act:'motion',code:'KeyU',mods:[2]},
+    'C-f':{act:'motion',code:'KeyF',mods:[2]},
+    'C-b':{act:'motion',code:'KeyB',mods:[2]},
+    'C-h':{act:'motion',code:'KeyH',mods:[2]},
+    'C-j':{act:'motion',code:'KeyJ',mods:[2]},
+    'C-k':{act:'motion',code:'KeyK',mods:[2]},
+    'C-l':{act:'motion',code:'KeyL',mods:[2]},
     'C-v':{act:'visual',code:'KeyV',mods:[2]}
   };
 
@@ -14,6 +20,7 @@ const WimUI=()=>{
       dd:{act:'phrase'},
       yy:{act:'phrase'},
       gg:{act:'phrase'},
+      '``':{act:'phrase'},
       cs:{act:'csurround'},
       ds:{act:'dsurround'},
       ys:{act:'ysurround'}
@@ -24,43 +31,59 @@ const WimUI=()=>{
     let xs={
       ascii:'',
       bracket:'[{()}]',
-      edit:'oOpPrxX',
-      seek:'fFtT',
+      edit:'oOpPrxX~',
       insert:'aAiI',
+      leader:' ',
       modifier:'ai',
       motion:'hjkl',
       mult_0:'123456789',
       mult_N:'0123456789',
       repeat:'.',
       search:'/?',
+      seek:'fFtT',
       tag:' 0123456789=:-',
       tag_end:'/>',
       tag_start:'t',
       text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
       undo:'u',
-      verb:'cdy',
+      verb:'cdy`',
       visual:'vV'
-    }; [['ascii',32,127],['tag',65,90],['tag',97,122]]
-          .forEach(([o,x,y])=>{for(let i=x;i<y;++i){xs[o]+=String.fromCharCode(i);}});
-    let t={};
-    for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
-    t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab']; return t;
+    };
+    [['ascii',32,127],['tag',65,90],['tag',97,122]]
+      .forEach(([o,x,y])=>{for(let i=x;i<=y;++i){xs[o]+=String.fromCharCode(i);}});
+    xs.ascii+=String.fromCharCode(9);
+    let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
+    t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
+    t.Delete=t.Backspace=['edit'];
+    ['Right','Left','Up','Down'].map(x=>t['Arrow'+x]=['arrow']);
+    return t;
   })();
+
+  /* Leader Tree */
+  const lt=()=>({tab:leaf, ascii:leaf});/* TODO */
 
   const leaf=1, branch=2, nomatch=3;
   const st=(n=0)=>{/* State Tree */
-    const bt=({bracket: leaf, tag_start:{get tag(){return this;}, tag_end:leaf}});
+    const bt=({bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
+          re=({enter:leaf, get ascii(){return this;}});
     return((x)=>{
-      if(n==1){
+      if(n===1){
         delete x.mult_0;
         Object.defineProperty(x,'mult_N',{get:function(){return this;}});
       } return x;
     })({
       get mult_0(){return st(1);},
+      get leader(){return lt();},
+      tab:leaf,
+      edit:leaf,
+      arrow:leaf,
       escape:leaf,
       motion:leaf,
       phrase:leaf,
+      repeat:leaf,
       text_object:leaf,
+      undo:leaf,
+      search:re,
       seek:{ascii:leaf},
       visual:leaf,
       verb:{
@@ -79,43 +102,62 @@ const WimUI=()=>{
           text_object:bt}}});
   };
 
-  let stt=st(), types=[], vals={keys:[],mods:[]};
-  const reset=()=>{stt=st(); types=[], vals={keys:[],mods:[]};};
+  let stt=st(), vals={keys:[],mods:[],types:[]};
+  const reset=()=>{stt=st(); vals={keys:[],mods:[],types:[]};};
 
   const maybe_chord=(n)=>{
     const m=n.KS[3][0]; if(!m){return null;}
     const kc=Array.from(n.KC); if(kc.length<2){return null;}
     for(let x in chord){
-      let c=chord[x], keyp=kc.includes(c.code), modp=c.mods.some(y=>y==m);
+      const c=chord[x], keyp=kc.includes(c.code), modp=c.mods.some(y=>y===m);
       if(modp && keyp){return c.act;}
     } return null;
   };
 
   const maybe_seq=(n)=>{
-    const nst=n.KS[0].join(''), dts=n.KS[2], snds=dts.slice(1),
-          deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x),
-          behead=(sl)=>{while(sl-->0){n.KS.forEach(x=>{x.shift();});};};
+    const ns=n.KS[0].join(''); if(2>ns.length){return null;}
+    const dts=n.KS[2], snds=dts.slice(1),
+          deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
-      let s=seq[x]; if(nst.startsWith(s.rn) && deltas(s)){behead(s.rn.length); return s.act;}
+      let s=seq[x]; if(0===ns.lastIndexOf(s.rn) && deltas(s)){ return s.act;}
     } return null;
   };
 
   const maybe_atom=(n)=>{
-    const a=atom[n.KS[0][0]]||[], m=n.KS[3][0], ns=Object.getOwnPropertyNames(stt);
+    const a=atom[n.KS[0][0]]; if(!a){return null;}
+    const m=n.KS[3][0], ns=Object.getOwnPropertyNames(stt);
     for(let i in a){
-      if((0===m || 8==m) && ns.includes(a[i])){return a[i];}
+      if((0===m || 8===m) && ns.includes(a[i])){return a[i];}
     } return null;
   };
 
   /* Input => (leaf|branch|nomatch) */
-  const climb_tree=(e)=>{
-    let y=stt[e]; if(y){
-      types.push(e);
-      let nexts=Object.getOwnPropertyNames(y);
-      console.log(`(${types.join(' ')}) (${nexts})`);
-      if(y==leaf){return leaf;}
-      stt=y; return branch;
+  const climb_tree=(x)=>{
+    let z=stt[x];
+    if(z){
+      vals.types.push(x);
+      if(leaf===z){return leaf;}
+      stt=z; return branch;
     } return nomatch;
+  };
+
+  const fs=[maybe_chord,maybe_seq,maybe_atom];
+  const R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset();} r.status=x; return r;};
+  const update=(input)=>{
+    let a=null;
+    for(let f in fs){
+      if((a=fs[f](input))){
+        if('escape'===a){return R('quit',1);}
+        vals.keys.push(input.KS[0][0]);
+        vals.mods.push(input.KS[3][0]);
+        if(nomatch===(a=climb_tree(a))){return R('error',1);}
+        if(leaf===a){return R('done',3);}
+        if(branch===a){return R('continue',2);}
+      }
+    }
+    if((a=atom[input.KS[0][0]]) && a.includes('ascii')){return R('error',1);}
+    if(input.KS[3][0]){return R('ignore');}
+    return R('error',1);
   };
 
   /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
@@ -125,44 +167,22 @@ const WimUI=()=>{
     const rk=[ev.key, ev.code, ev.timeStamp|0,
               ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
           ad={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];/* allow default */
-    if(ad && ad[navigator.platform=='MacIntel'|0]==rk[3]){return;}
+    if(ad && ad[navigator.platform==='MacIntel'|0]===rk[3]){return;}
     ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
-    console.log(wui.update(kh));
+    let wu=update(kh);
+    console.log(JSON.stringify(wu,null,0));
   };
 
-  const R=(x,y,z=0)=>{
-    if(2==z || 3==z){x=({keys:vals.keys,mods:vals.mods,types});}
-    if(1==z || 3==z){reset();}
-    x.status=y; return x;
-  };
-
-  const fs=[maybe_chord,maybe_seq,maybe_atom];
-  const update=(input)=>{
-    let a=null, ret={};
-    for(let f in fs){
-      if((a=fs[f](input))){
-        if('escape'==a){return R(ret,'quit',1);}
-        vals.keys.push(input.KS[0][0]);
-        vals.mods.push(input.KS[3][0]);
-        if(nomatch==(a=climb_tree(a))){return R(ret,'error',1);}
-        if(leaf==a){return R(ret,'done',3);}
-        if(branch==a){return R(ret,'continue',2);}
-      }
-    }
-    if((a=atom[input.KS[0][0]]) && a.includes('ascii')){return R(ret,'error',1);}
-    if(input.KS[3][0]){return R(ret,'ignore');}
-    return R(ret,'error',1);
-  };
-
-  return({update,key_handler});
+  return testing?
+    ({climb_tree,update,key_handler,kh,lt,st,stt,reset,vals})
+  : ({update,key_handler});
 };
 
 
 /* Impl */
-const ctx=document.getElementById('c').getContext('2d'), wui=WimUI();
+const ctx=document.getElementById('c').getContext('2d'), wir=Wir();
 
-/* testing */
 const render=(lines)=>{
   ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
   let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
@@ -181,7 +201,16 @@ const rsz=()=>{
   render(demo_string);
 };
 
-window.addEventListener('keydown',(e)=>wui.key_handler(e,0));
-window.addEventListener('keyup',(e)=>wui.key_handler(e,1));
+const key_handler_down=(e)=>wir.key_handler(e,0),
+      key_handler_up=(e)=>wir.key_handler(e,1);
+window.addEventListener('keydown',key_handler_down);
+window.addEventListener('keyup',key_handler_up);
 window.addEventListener('load',rsz);
 window.addEventListener('resize',rsz);
+
+const run_tests=()=>{
+  const wr=Wir(1);
+  console.assert(1);
+};
+
+run_tests();
