@@ -13,7 +13,7 @@ const Wir=(testing=0)=>{
     'C-v':{act:'visual',code:'KeyV',mods:[2]}
   };
 
-  const seq=(()=>{/* {String:{Action,ReverseName,MsBetween?}} */
+  const seq=(()=>{/* {String:{Action,ReverseName,MinimumMsBetween?}} */
     let t={
       fd:{act:'escape',dt:200},
       cc:{act:'phrase'},
@@ -27,6 +27,7 @@ const Wir=(testing=0)=>{
     }; for(let x in t){t[x].rn=[...x].reverse().join('');} return t;
   })();
 
+  const range=(a,b,c=1)=>{let i=a,r=[];for(;i<b;i+=c){r.push(i);}return r;};
   const atom=(()=>{/* {Char:[Type]} */
     let xs={
       ascii:'',
@@ -50,7 +51,7 @@ const Wir=(testing=0)=>{
       visual:'vV'
     };
     [['ascii',32,127],['tag',65,90],['tag',97,122]]
-      .forEach(([o,x,y])=>{for(let i=x;i<=y;++i){xs[o]+=String.fromCharCode(i);}});
+      .forEach(([o,x,y])=>{xs[o]+=String.fromCharCode(...range(x,y));});
     xs.ascii+=String.fromCharCode(9);
     let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
@@ -141,9 +142,9 @@ const Wir=(testing=0)=>{
     } return nomatch;
   };
 
-  const fs=[maybe_chord,maybe_seq,maybe_atom];
-  const R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset();} r.status=x; return r;};
   const update=(input)=>{
+    const fs=[maybe_chord,maybe_seq,maybe_atom];
+    const R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset();} r.status=x; return r;};
     let a=null;
     for(let f in fs){
       if((a=fs[f](input))){
@@ -176,20 +177,23 @@ const Wir=(testing=0)=>{
 
   return testing?
     ({
-        atom,
-        chord,
-        seq,
-        vals,
-        climb_tree,
-        update,
-        key_handler,
-        kh,
-        lt,
-        st,
-        stt,
-        reset
+      atom,
+      chord,
+      climb_tree,
+      key_handler,
+      kh,
+      lt,
+      maybe_atom,
+      maybe_chord,
+      maybe_seq,
+      reset,
+      seq,
+      st,
+      stt,
+      update,
+      vals
     })
-  : ({update,key_handler});
+  : ({key_handler, update});
 };
 
 
@@ -223,7 +227,7 @@ window.addEventListener('resize',rsz);
 
 const run_tests=()=>{
   const wr=Wir(1);
-  console.assert(['ascii','tag','modifier','insert'].every(x=>wr.atom['a']),'atom has proper types');
+  console.assert(['ascii','tag','modifier','insert'].every(x=>wr.atom['a']),'atom["a"] has proper types');
   console.assert(typeof wr.kh === 'object', 'kh is an object');
 };
 
