@@ -180,9 +180,9 @@ const Parser=()=>{
     ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
     let wu=update(kh);
-    console.log(JSON.stringify(wu,null,0));
+    // console.log(JSON.stringify(wu,null,0));
     return wu;
   };
 
-  return {key_handler, update};
+  return {key_handler, update, kh};
 };
