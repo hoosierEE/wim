@@ -1,19 +1,19 @@
 const ctx=document.getElementById('c').getContext('2d'), par=Parser();
 
-const render=(lines)=>{
+const render=()=>{
+  const lines="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
   ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
   let pos=20; lines.replace(/\. +/g,'.\n').split('\n').forEach(l=>{ctx.fillText(l,20,pos+=30);});
 };
 
 const rsz=()=>{/* fit to screen */
-  const demo_string="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
   const dpr=window.devicePixelRatio, h=window.innerHeight, w=window.innerWidth;
   ctx.scale(dpr,dpr);
   [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
   [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
   /* fonts AFTER canvas mod */
   ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
-  render(demo_string);
+  render();
 };
 
 const key_handler_down=(e)=>par.key_handler(e,0),
@@ -41,26 +41,17 @@ const test=()=>{
   const shuffle=(array)=>{
     for(let i=array.length-1;i>0;--i) {
       const j=Math.floor(Math.random()*(i+1)),
-          temp=array[i];
+            temp=array[i];
       array[i]=array[j];
       array[j]=temp;
     } return array;
   };
 
   const iota=(a)=>{let r=[];while(a>0){r.unshift(--a);}return r;};
-  /* const ascii=String.fromCharCode(...iota(127-32).map(x=>x+32)); */
   const lower=String.fromCharCode(...iota(26).map(x=>x+97));
 
   /* construct a bunch of keyboard events */
   const mk_rand_ke=()=>shuffle([...lower]).map(x=>mke(x,0)).filter(x=>x!=null);
-  const ke=mk_rand_ke();
-  // ke.slice(0,10).forEach(x=>{
-  //   let r=p.key_handler(x,0);
-  //   p.key_handler(x,1);/* release key */
-  //   console.log(`${x.key}${JSON.stringify(r)}`);
-  // });
-
-  /* follow interesting events */
   const follow=(m=0,s='')=>{
     const k=mk_rand_ke();
     k.forEach(x=>{
