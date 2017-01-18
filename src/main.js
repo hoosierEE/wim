@@ -1,4 +1,4 @@
-const Wir=(testing=0)=>{
+const WR=()=>{
   const chord={/* ChordName:{Action,KeyCode,[Mods]} */
     'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
     'C-g':{act:'escape',code:'KeyG',mods:[2]},
@@ -27,7 +27,7 @@ const Wir=(testing=0)=>{
     }; for(let x in t){t[x].rn=[...x].reverse().join('');} return t;
   })();
 
-  const range=(a,b,c=1)=>{let i=a,r=[];for(;i<b;i+=c){r.push(i);}return r;};
+  const range=(a,b,c=1)=>{let r=[];for(let i=a;i<b;i+=c){r.push(i);}return r;};
   const atom=(()=>{/* {Char:[Type]} */
     let xs={
       ascii:'',
@@ -66,13 +66,14 @@ const Wir=(testing=0)=>{
   const leaf=1, branch=2, nomatch=3;
   const st=(n=0)=>{/* State Tree */
     const bt=({bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
-          re=({enter:leaf, get ascii(){return this;}});
-    return((x)=>{
-      if(n===1){
-        delete x.mult_0;
-        Object.defineProperty(x,'mult_N',{get:function(){return this;}});
-      } return x;
-    })({
+          re=({enter:leaf, get ascii(){return this;}}),
+          mn=(x)=>{
+            if(n===1){
+              delete x.mult_0;
+              Object.defineProperty(x,'mult_N',{get:function(){return this;}});
+            } return x;
+          };
+    return mn({
       get mult_0(){return st(1);},
       get leader(){return lt();},
       tab:leaf,
@@ -144,7 +145,7 @@ const Wir=(testing=0)=>{
 
   const update=(input)=>{
     const fs=[maybe_chord,maybe_seq,maybe_atom];
-    const R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset();} r.status=x; return r;};
+    const R=(x,y=0)=>{let r={}; if(y& 0b10){r=vals;} if(y& 0b01){reset();} r.status=x; return r;};
     let a=null;
     for(let f in fs){
       if((a=fs[f](input))){
@@ -164,41 +165,24 @@ const Wir=(testing=0)=>{
   /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
   const kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
   const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
-    kh.KC[up?'delete':'add'](ev.code); if(up){return;}
+    kh.KC[up?'delete':'add'](ev.code); if(up){return null;}
     const rk=[ev.key, ev.code, ev.timeStamp|0,
               ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
           ad={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];/* allow default */
-    if(ad && ad[navigator.platform==='MacIntel'|0]===rk[3]){return;}
+    if(ad && ad[navigator.platform==='MacIntel'|0]===rk[3]){return null;}
     ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
     let wu=update(kh);
     console.log(JSON.stringify(wu,null,0));
+    return wu;
   };
 
-  return testing?
-    ({
-      atom,
-      chord,
-      climb_tree,
-      key_handler,
-      kh,
-      lt,
-      maybe_atom,
-      maybe_chord,
-      maybe_seq,
-      reset,
-      seq,
-      st,
-      stt,
-      update,
-      vals
-    })
-  : ({key_handler, update});
+  return {key_handler, update, range};
 };
 
 
 /* Impl */
-const ctx=document.getElementById('c').getContext('2d'), wir=Wir();
+const ctx=document.getElementById('c').getContext('2d'), wir=WR();
 
 const render=(lines)=>{
   ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height);
@@ -214,7 +198,7 @@ const rsz=()=>{
   [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
   [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
   /* fonts AFTER canvas mod */
-  ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
+  ctx.font=(18*dpr)+'px monospace';
   render(demo_string);
 };
 
@@ -225,10 +209,16 @@ window.addEventListener('keyup',key_handler_up);
 window.addEventListener('load',rsz);
 window.addEventListener('resize',rsz);
 
-const run_tests=()=>{
-  const wr=Wir(1);
-  console.assert(['ascii','tag','modifier','insert'].every(x=>wr.atom['a']),'atom["a"] has proper types');
-  console.assert(typeof wr.kh === 'object', 'kh is an object');
+const testing=()=>{
+  const wr=WR();
+  const mke=(c,k,m,ts=window.performance.now())=>{
+    let t={key:k,code:c,timeStamp:ts,preventDefault:function(){}},
+        mods=['shiftKey','metaKey','ctrlKey','altKey'],
+        bin=m.toString(2); while(bin.length<4){bin='0'+bin;}
+    [...bin].forEach((x,i)=>t[mods[i]]=!!+x);
+    return t;
+  };
+  [0,1,2,3,4,7,8].map(x=>mke('c','KeyC',x)).map(key_handler_down);
 };
 
-run_tests();
+testing();
