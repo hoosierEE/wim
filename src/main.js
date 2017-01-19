@@ -24,8 +24,13 @@ window.addEventListener('keyup',key_handler_up);
 window.addEventListener('load',rsz);
 window.addEventListener('resize',rsz);
 
+const iota=(a)=>{let r=[];while(a>0){r.unshift(--a);}return r;};
+const roll=(n)=>Math.random()*n|0;
+
+console.log(iota(5).map(roll));
+
 const test=()=>{
-  const p=Parser();
+  const p=Parser()
 
   const mke=(k,m=0,c='',ts=performance.now())=>{/* Mock KeyboardEvent */
     if((c>='a'&&c<='z')||(c>='A'&&c<='Z')){k='Key'+c.toUpperCase();}
@@ -47,7 +52,6 @@ const test=()=>{
     } return array;
   };
 
-  const iota=(a)=>{let r=[];while(a>0){r.unshift(--a);}return r;};
   const lower=String.fromCharCode(...iota(26).map(x=>x+97));
 
   /* construct a bunch of keyboard events */
@@ -57,10 +61,9 @@ const test=()=>{
     k.forEach(x=>{
       let r=p.key_handler(x,0);
       p.key_handler(x,1);
-      if(m<8 && r.status=='continue'){follow(++m,x.key+s);}
-      else{console.log(s);return;}
+      if(m<5 && r.status=='continue'){follow(++m,x.key+s);}
+      return s;
     });
   };
-  follow();
+  return follow();
 };
-test();
