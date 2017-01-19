@@ -6,7 +6,7 @@
 
  Currently key_handler calls update directly, but if update becomes a bottleneck
  it can instead be enqueued via requestAnimationFrame. */
-const Parser=()=>{
+const Parser=(logging=0)=>{
   const chord={/* ChordName:{Action,KeyCode,[Mods]} */
     'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
     'C-g':{act:'escape',code:'KeyG',mods:[2]},
@@ -180,7 +180,7 @@ const Parser=()=>{
     ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
     let wu=update(kh);
-    // console.log(JSON.stringify(wu,null,0));
+    if(logging){console.log(JSON.stringify(wu));}
     return wu;
   };
 

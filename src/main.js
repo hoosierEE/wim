@@ -1,4 +1,4 @@
-const ctx=document.getElementById('c').getContext('2d'), par=Parser();
+const ctx=document.getElementById('c').getContext('2d'), par=Parser(1);
 
 const render=()=>{
   const lines="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
@@ -15,55 +15,54 @@ const rsz=()=>{/* fit to screen */
   ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
   render();
 };
-
-const key_handler_down=(e)=>par.key_handler(e,0),
+const key_handler_dn=(e)=>par.key_handler(e,0),
       key_handler_up=(e)=>par.key_handler(e,1);
-
-window.addEventListener('keydown',key_handler_down);
+window.addEventListener('keydown',key_handler_dn);
 window.addEventListener('keyup',key_handler_up);
 window.addEventListener('load',rsz);
 window.addEventListener('resize',rsz);
 
-const iota=(a)=>{let r=[];while(a>0){r.unshift(--a);}return r;};
-const roll=(n)=>Math.random()*n|0;
 
-console.log(iota(5).map(roll));
+/* UTILS */
+const log=(y)=>console.log(JSON.stringify(y));
 
-const test=()=>{
-  const p=Parser()
+/* array */
+const iota=(y)=>{let r=[];while(y>0){r.unshift(--y);}return r;};
+const copy=(x,y)=>{let r=[];while(y-->0)r.push(x);return r;};
+const ai=(x)=>x.codePointAt();
 
-  const mke=(k,m=0,c='',ts=performance.now())=>{/* Mock KeyboardEvent */
-    if((c>='a'&&c<='z')||(c>='A'&&c<='Z')){k='Key'+c.toUpperCase();}
-    const t={code:c, key:k, timeStamp:ts, preventDefault:function(){}},
-          mods=['shiftKey','metaKey','ctrlKey','altKey'];
-    let mc=m.toString(2);while(mc.length<4){mc='0'+mc;}
-    [...mc].map((x,i)=>(t[mods[i]]=!!Number(x)));
-    return t;
-  };
+/* random */
+const roll=(y)=>Math.random()*y|0;
+/* http://stackoverflow.com/a/12646864/2037637
+ Randomize array in-place using Durstenfeld shuffle algorithm. */
+const shuffle=(array)=>{
+  for(let i=array.length-1;i>0;--i) {
+    const j=Math.floor(Math.random()*(i+1)), temp=array[i];
+    array[i]=array[j];
+    array[j]=temp;
+  } return array;
+};
 
-  /* http://stackoverflow.com/a/12646864/2037637
-   Randomize array in-place using Durstenfeld shuffle algorithm. */
-  const shuffle=(array)=>{
-    for(let i=array.length-1;i>0;--i) {
-      const j=Math.floor(Math.random()*(i+1)),
-            temp=array[i];
-      array[i]=array[j];
-      array[j]=temp;
-    } return array;
-  };
+/* testing */
+const test=(()=>{
+  const p=Parser(),
+        mke=(k,m=0,c='',ts=performance.now())=>{/* Mock KeyboardEvent */
+          if((k>='a'&&k<='z')||(k>='A'&&k<='Z')){c='Key'+k.toUpperCase();}
+          const t={code:c, key:k, timeStamp:ts, preventDefault:function(){}},
+                mods=['shiftKey','metaKey','ctrlKey','altKey'];
+          let mc=m.toString(2);while(mc.length<4){mc='0'+mc;}
+          [...mc].map((x,i)=>(t[mods[i]]=!!Number(x)));
+          return t;
+        },
+        Cg=mke('c',2);/* Ctrl-g is a reset */
+  console.log(p.key_handler(Cg));
+  console.assert(p.key_handler(Cg).status=='quit','can reset');
 
-  const lower=String.fromCharCode(...iota(26).map(x=>x+97));
+  const lower=String.fromCharCode(...iota(26).map(x=>x+(ai('a'))));
+  const mkes=[...lower].map(x=>mke(x,0));
 
   /* construct a bunch of keyboard events */
-  const mk_rand_ke=()=>shuffle([...lower]).map(x=>mke(x,0)).filter(x=>x!=null);
-  const follow=(m=0,s='')=>{
-    const k=mk_rand_ke();
-    k.forEach(x=>{
-      let r=p.key_handler(x,0);
-      p.key_handler(x,1);
-      if(m<5 && r.status=='continue'){follow(++m,x.key+s);}
-      return s;
-    });
+  const dfs=(d=4)=>{
   };
-  return follow();
-};
+  return dfs();
+})();
