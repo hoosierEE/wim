@@ -47,22 +47,35 @@ const shuffle=(array)=>{
 const test=(()=>{
   const p=Parser(),
         mke=(k,m=0,c='',ts=performance.now())=>{/* Mock KeyboardEvent */
-          if((k>='a'&&k<='z')||(k>='A'&&k<='Z')){c='Key'+k.toUpperCase();}
+          if(!c && k>='a'&&k<='z' || k>='A'&&k<='Z'){c='Key'+k.toUpperCase();}
           const t={code:c, key:k, timeStamp:ts, preventDefault:function(){}},
                 mods=['shiftKey','metaKey','ctrlKey','altKey'];
           let mc=m.toString(2);while(mc.length<4){mc='0'+mc;}
-          [...mc].map((x,i)=>(t[mods[i]]=!!Number(x)));
+          [...mc].forEach((x,i)=>t[mods[i]]=!!Number(x));
           return t;
         },
-        Cg=mke('c',2);/* Ctrl-g is a reset */
-  console.log(p.key_handler(Cg));
-  console.assert(p.key_handler(Cg).status=='quit','can reset');
+        C=mke('Control',2,'ControlLeft');
+        Cg=mke('g',2);/* Ctrl-g is a reset */
+  const reset=()=>{
+    cg=[C,Cg].map(x=>p.key_handler(x,0))[1];
+    console.assert(cg.status=='quit','can reset');
+    [C,Cg].map(x=>p.key_handler(x,1));
+  };
 
   const lower=String.fromCharCode(...iota(26).map(x=>x+(ai('a'))));
   const mkes=[...lower].map(x=>mke(x,0));
 
   /* construct a bunch of keyboard events */
-  const dfs=(d=4)=>{
+  const dfs=(d=5)=>{
+    return mkes.forEach(x=>{
+      let r=p.key_handler(x,0);
+      p.key_handler(x,1);
+      if(r.status=='continue' && d>0){
+        log(r.keys);
+        dfs(d-1);
+      }
+      reset();
+    });
   };
-  return dfs();
+  // dfs();
 })();
