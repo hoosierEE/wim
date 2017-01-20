@@ -15,67 +15,10 @@ const rsz=()=>{/* fit to screen */
   ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
   render();
 };
+
 const key_handler_dn=(e)=>par.key_handler(e,0),
       key_handler_up=(e)=>par.key_handler(e,1);
 window.addEventListener('keydown',key_handler_dn);
 window.addEventListener('keyup',key_handler_up);
 window.addEventListener('load',rsz);
 window.addEventListener('resize',rsz);
-
-
-/* UTILS */
-const log=(y)=>console.log(JSON.stringify(y));
-
-/* array */
-const iota=(y)=>{let r=[];while(y>0){r.unshift(--y);}return r;};
-const copy=(x,y)=>{let r=[];while(y-->0)r.push(x);return r;};
-const ai=(x)=>x.codePointAt();
-
-/* random */
-const roll=(y)=>Math.random()*y|0;
-/* http://stackoverflow.com/a/12646864/2037637
- Randomize array in-place using Durstenfeld shuffle algorithm. */
-const shuffle=(array)=>{
-  for(let i=array.length-1;i>0;--i) {
-    const j=Math.floor(Math.random()*(i+1)), temp=array[i];
-    array[i]=array[j];
-    array[j]=temp;
-  } return array;
-};
-
-/* testing */
-const test=(()=>{
-  const p=Parser(),
-        mke=(k,m=0,c='',ts=performance.now())=>{/* Mock KeyboardEvent */
-          if(!c && k>='a'&&k<='z' || k>='A'&&k<='Z'){c='Key'+k.toUpperCase();}
-          const t={code:c, key:k, timeStamp:ts, preventDefault:function(){}},
-                mods=['shiftKey','metaKey','ctrlKey','altKey'];
-          let mc=m.toString(2);while(mc.length<4){mc='0'+mc;}
-          [...mc].forEach((x,i)=>t[mods[i]]=!!Number(x));
-          return t;
-        },
-        C=mke('Control',2,'ControlLeft');
-        Cg=mke('g',2);/* Ctrl-g is a reset */
-  const reset=()=>{
-    cg=[C,Cg].map(x=>p.key_handler(x,0))[1];
-    console.assert(cg.status=='quit','can reset');
-    [C,Cg].map(x=>p.key_handler(x,1));
-  };
-
-  const lower=String.fromCharCode(...iota(26).map(x=>x+(ai('a'))));
-  const mkes=[...lower].map(x=>mke(x,0));
-
-  /* construct a bunch of keyboard events */
-  const dfs=(d=5)=>{
-    return mkes.forEach(x=>{
-      let r=p.key_handler(x,0);
-      p.key_handler(x,1);
-      if(r.status=='continue' && d>0){
-        log(r.keys);
-        dfs(d-1);
-      }
-      reset();
-    });
-  };
-  // dfs();
-})();

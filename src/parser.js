@@ -35,7 +35,7 @@ const Parser=(logging=0)=>{
     }; for(let x in t){t[x].rn=[...x].reverse().join('');} return t;
   })();
 
-  const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a+=c);}return r;};
+  const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
   const atom=(()=>{/* {Char:[Type]} */
     let xs={
       ascii:'',
@@ -59,7 +59,7 @@ const Parser=(logging=0)=>{
       visual:'vV'
     };
     [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
-      .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y).concat(others));});
+      .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     xs.ascii+=String.fromCharCode(9);
     let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
@@ -184,5 +184,5 @@ const Parser=(logging=0)=>{
     return wu;
   };
 
-  return {key_handler, update, kh};
+  return {key_handler, update, kh, stt};
 };
