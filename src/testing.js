@@ -29,8 +29,8 @@ const alphabet='abcdefghijklmnopqrstuvwxyz',
 const chk=(str)=>{
   let r=0;
   return [...str].map(x=>mke(x,0)).map(x=>{
-    let r=peck(x); reset();
-    return x.key+((r.status=='continue')?'_':'');
+    reset();
+    return x.key+(peck(x).status==='continue'?'_':'');
   });
 };
 
