@@ -3,6 +3,7 @@
  + update: ModifiedKeyboardEvent -> ParserStatus
 
  NOTE: These 2 functions communicate implicitly via mutable internal state (kh).
+ I know, I know.
 
  Currently key_handler calls update directly, but if update becomes a bottleneck
  it can instead be enqueued via requestAnimationFrame. */
@@ -112,6 +113,7 @@ const Parser=(logging=0)=>{
   };
 
   let stt=st(), vals={keys:[],mods:[],types:[]};
+  const get_stt=()=>{return stt;};
   const reset=()=>{stt=st(); vals={keys:[],mods:[],types:[]};};
 
   const maybe_chord=(n)=>{
@@ -128,7 +130,7 @@ const Parser=(logging=0)=>{
     const dts=n.KS[2], snds=dts.slice(1),
           deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
-      let s=seq[x]; if(0===ns.lastIndexOf(s.rn) && deltas(s)){ return s.act;}
+      let s=seq[x]; if(0===ns.lastIndexOf(s.rn) && deltas(s)){return s.act;}
     } return null;
   };
 
@@ -169,6 +171,7 @@ const Parser=(logging=0)=>{
     return R('error',1);
   };
 
+  const pp=(x)=>console.log(JSON.stringify(x));
   /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
   const kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
   const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
@@ -180,9 +183,9 @@ const Parser=(logging=0)=>{
     ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
     let wu=update(kh);
-    if(logging){console.log(JSON.stringify(wu));}
+    if(logging){pp(wu);}
     return wu;
   };
 
-  return {key_handler, update, kh, stt};
+  return {key_handler, update, kh, get_stt};
 };
