@@ -1,35 +1,6 @@
 /* pretty print */
 const pp=(y)=>console.log(JSON.stringify(y));
 
-/* arrays */
-const reshape=(x,y)=>{
-  const reshape0=(x,y)=>{let r=[];while(y.length){r.push(y.splice(0,x));}return r;};
-  while(x.length){y=reshape0(x.pop(),y);}
-  return y[0];
-};
-const iota=(n)=>{/* NOTE: ascending only */
-  const iota0=(y)=>{let r=[]; while(y>0){r.unshift(--y);} return r;},
-        nprod=(x)=>x.reduce((a,b)=>a*b);
-  return reshape(n,iota0(nprod(n)));
-};
-const copy=(x,y)=>{let r=[];while(y-->0)r.push(x);return r;};
-
-/* ascii */
-const ai=(x)=>x.codePointAt();
-
-/* randomness */
-const roll=(y)=>Math.random()*y|0;
-/* http://stackoverflow.com/a/12646864/2037637
- Randomize array in-place using Durstenfeld shuffle algorithm. */
-const shuffle=(array)=>{
-  for(let i=array.length-1;i>0;--i) {
-    const j=Math.floor(Math.random()*(i+1)), temp=array[i];
-    array[i]=array[j];
-    array[j]=temp;
-  } return array;
-};
-
-
 /* TEST! */
 const p=Parser(),
       keydn=(e)=>p.key_handler(e,0),
@@ -52,26 +23,18 @@ const Control=mke('Control',2,'ControlLeft'), Control_g=mke('g',2);/* Ctrl-g is 
 const reset=()=>{return cg=chord(Control,Control_g)[1];};
 console.assert(reset().status=='quit','can reset');
 
-const alpha_lowercase=String.fromCharCode(...iota([26]).map(x=>x+(ai('a')))),
-      mkes=[...alpha_lowercase].map(x=>mke(x,0));
+const alphabet='abcdefghijklmnopqrstuvwxyz',
+      mkes=[...alphabet].map(x=>mke(x,0));
 
-const check_seq=(str)=>{
-  const evts=[...str].map(x=>mke(x,0));
-  for(let i in evts){
-    let r=peck(evts[i]);
-    if(r.status!='continue'){reset(); return 0;}
-  } return 1;
+const chk=(str)=>{
+  let r=0;
+  return [...str].map(x=>mke(x,0)).map(x=>{
+    let r=peck(x); reset();
+    return x.key+((r.status=='continue')?'_':'');
+  });
 };
 
-
-
-/* TODO -- Depth-first search all sequences of keyboard events.
-
- f():
- for letter in letters.map(peck):
- if 'continue':
- return letter+f()
- return letter
+/* TODO -- find all sequences of keyboard events.
 
  a (error) -> a
  b (done) -> b
@@ -84,16 +47,20 @@ const check_seq=(str)=>{
  cf (continue)
  cfa (done)
  ...
+
  cfz (done)
  cg (error)
  ce (done)
  cf (continue)
  cfa (done)
  ...
+
  cfz (done)
  cg (error)
  ...
+
  cz (error)
  d (continue)
  ...
+
  */
