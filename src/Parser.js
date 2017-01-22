@@ -114,7 +114,7 @@ const Parser=(logging=0)=>{
 
   let stt=st(), vals={keys:[],mods:[],types:[]};
   const get_stt=()=>{return stt;};
-  const reset=()=>{stt=st(); vals={keys:[],mods:[],types:[]};};
+  const reset_stt=()=>{stt=st(); vals={keys:[],mods:[],types:[]};};
 
   const maybe_chord=(n)=>{
     const m=n.KS[3][0]; if(!m){return null;}
@@ -130,7 +130,9 @@ const Parser=(logging=0)=>{
     const dts=n.KS[2], snds=dts.slice(1),
           deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
-      let s=seq[x]; if(0===ns.lastIndexOf(s.rn) && deltas(s)){return s.act;}
+      let s=seq[x];
+      /* NOTE fixed? should treat cccc as [cc, cc], not [cc, cc, cc] */
+      if(ns.startsWith(s.rn) && !(ns.slice(s.rn.length).startsWith(s.rn)) && deltas(s)){return s.act;}
     } return null;
   };
 
@@ -144,8 +146,7 @@ const Parser=(logging=0)=>{
 
   /* Input => (leaf|branch|nomatch) */
   const climb_tree=(x)=>{
-    let z=stt[x];
-    if(z){
+    let z=stt[x]; if(z){
       vals.types.push(x);
       if(leaf===z){return leaf;}
       stt=z; return branch;
@@ -153,8 +154,8 @@ const Parser=(logging=0)=>{
   };
 
   const update=(input)=>{
-    const fs=[maybe_chord,maybe_seq,maybe_atom];
-    const R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset();} r.status=x; return r;};
+    const fs=[maybe_chord,maybe_seq,maybe_atom],
+          R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset_stt();} r.status=x; return r;};
     let a=null;
     for(let f in fs){
       if((a=fs[f](input))){
@@ -172,8 +173,10 @@ const Parser=(logging=0)=>{
   };
 
   const pp=(x)=>console.log(JSON.stringify(x));
+
   /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
   const kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
+
   const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
     kh.KC[up?'delete':'add'](ev.code); if(up){return null;}
     const rk=[ev.key, ev.code, ev.timeStamp|0,

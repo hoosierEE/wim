@@ -42,4 +42,5 @@ const addone=(str='')=>{
 const flatten=(x)=>x.reduce((a,b)=>a.concat(Array.isArray(b)?flatten(b):b),[]);
 const addall=(x)=>flatten(x.map(addone));
 const longseq=(x,n)=>{while(n-->0){x=addall(x);} return x;};
-console.assert(Math.max(...longseq([...alphabet],5).map(x=>x.length))>4,'long sequences (>4) should exist');
+const seqs=longseq([...alphabet],5);
+console.assert(Math.max(...seqs.map(x=>x.length))>4,'long sequences (>4) should exist');
