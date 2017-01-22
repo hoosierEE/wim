@@ -1,3 +1,4 @@
+'use strict';
 /* Parser.js -- transforms keyboard input into tokens.
  + key_handler: KeyboardEvent -> ModifiedKeyboardEvent
  + update: ModifiedKeyboardEvent -> ParserStatus
