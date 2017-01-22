@@ -126,6 +126,13 @@ const Parser=(logging=0)=>{
     } return null;
   };
 
+  // a indexes of b?
+  const iofs=(a,b)=>{
+    let r=[]; for(let i=0;i<a.length;++i){
+
+    }
+  };
+
   const maybe_seq=(n)=>{
     const ns=n.KS[0].join(''); if(2>ns.length){return null;}
     const dts=n.KS[2], snds=dts.slice(1),
