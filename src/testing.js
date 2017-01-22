@@ -1,12 +1,12 @@
 /* pretty print */
-const pp=(y)=>console.log(JSON.stringify(y));
+const pp=(a)=>console.log(JSON.stringify(a));
 
 /* TEST! */
 const p=Parser(),
-      keydn=(e)=>p.key_handler(e,0),
-      keyup=(e)=>p.key_handler(e,1),
-      peck=(e)=>{const r=keydn(e);keyup(e); return r;},
-      chord=(...e)=>{const r=e.map(x=>keydn(x));e.forEach(x=>keyup(x)); return r;};
+      keydn=(a)=>p.key_handler(a,0),
+      keyup=(a)=>p.key_handler(a,1),
+      peck=(a)=>{const r=keydn(a);keyup(a); return r;},
+      chord=(...a)=>{const r=a.map(x=>keydn(x));a.forEach(x=>keyup(x)); return r;};
 
 /* Mock KeyboardEvent */
 const mke=(k,m=0,c='',ts=performance.now())=>{

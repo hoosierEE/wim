@@ -172,8 +172,6 @@ const Parser=(logging=0)=>{
     return R('error',1);
   };
 
-  const pp=(x)=>console.log(JSON.stringify(x));
-
   /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
   const kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
 
@@ -186,9 +184,7 @@ const Parser=(logging=0)=>{
     ev.preventDefault();
     rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
     let wu=update(kh);
-    if(logging){pp(wu);}
     return wu;
   };
-
-  return {key_handler, update, kh, get_stt};
+  return {key_handler};
 };
