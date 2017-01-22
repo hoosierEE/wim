@@ -14,7 +14,7 @@ const rsz=()=>{/* fit to screen */
   [ctx.canvas.height,ctx.canvas.width]=[h,w].map(x=>dpr*x);
   [ctx.canvas.style.height,ctx.canvas.style.width]=[h,w].map(x=>x+'px');
   /* fonts AFTER canvas mod */
-  ctx.font=(18*dpr)+'px "Source Code Pro for Powerline"';
+  ctx.font=(18*dpr)+'px monospace';
   render();
 };
 

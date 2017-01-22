@@ -112,9 +112,9 @@ const Parser=(logging=0)=>{
           text_object:bt}}});
   };
 
-  let stt=st(), vals={keys:[],mods:[],types:[]};
+  let stt=st(), vals={keys:[],mods:[],part:[]};
   const get_stt=()=>{return stt;};
-  const reset_stt=()=>{stt=st(); vals={keys:[],mods:[],types:[]};};
+  const reset_stt=()=>{stt=st(); vals={keys:[],mods:[],part:[]};};
 
   const maybe_chord=(n)=>{
     const m=n.KS[3][0]; if(!m){return null;}
@@ -147,7 +147,7 @@ const Parser=(logging=0)=>{
   /* Input => (leaf|branch|nomatch) */
   const climb_tree=(x)=>{
     let z=stt[x]; if(z){
-      vals.types.push(x);
+      vals.part.push(x);
       if(leaf===z){return leaf;}
       stt=z; return branch;
     } return nomatch;
