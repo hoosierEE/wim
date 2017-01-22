@@ -126,11 +126,14 @@ const Parser=(logging=0)=>{
     } return null;
   };
 
-  // a indexes of b?
-  const iofs=(a,b)=>{
-    let r=[]; for(let i=0;i<a.length;++i){
-
-    }
+  // aaa -> [a, aa] [1]
+  // aaaa -> [aa, aa] [0,2]
+  // aaaaa -> [a, aa, aa] [1,3]
+  const prefix=(a,b)=>{
+    if(!b.startsWith(a)){return false;}
+    let r=[];for(let i=0;i<b.length;++i){
+      if(b.slice(i).startsWith(a)){r.push(i);}
+    } return r.length===1 || r[1]>a.length;
   };
 
   const maybe_seq=(n)=>{
@@ -139,8 +142,7 @@ const Parser=(logging=0)=>{
           deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
       let s=seq[x];
-      /* NOTE fixed? should treat cccc as [cc, cc], not [cc, cc, cc] */
-      if(ns.startsWith(s.rn) && !(ns.slice(s.rn.length).startsWith(s.rn)) && deltas(s)){return s.act;}
+      if(prefix(s.rn,ns) && deltas(s)){return s.act;}
     } return null;
   };
 
