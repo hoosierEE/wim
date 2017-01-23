@@ -1,14 +1,5 @@
 const ctx=document.getElementById('c').getContext('2d'), par=Parser(1);
-
 const pp=(x)=>console.log(JSON.stringify(x));
-
-const intervals=(a,b)=>{
-  let r=[], len=b.length, i=b.length-a;
-  while(len-i>0){
-    r.push(b.slice(i));
-    i-=a;
-  } return r;
-};
 
 const render=()=>{
   const lines="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";

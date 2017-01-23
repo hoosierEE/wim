@@ -8,6 +8,17 @@ const zip=xs=>xs[0].map((_,y)=>xs.map(x=>x[y]));
 const curry=(f,...x)=>f.length>x.length?(...y)=>curry(f,...x,...y):f(...x);
 
 
+const intervals=(a,b)=>{
+  if(a>0){let r=[]; for(let i=0;i<b.length;i+=a){r.push(b.slice(i,i+a));} return r;}
+  if(a<0){
+    let r=[], t=b.slice(), counter=0;
+    while(t.length>-a){
+      r.unshift(t.slice(a));
+      t=t.slice(0,a);
+    } if(t.length){r.unshift(t);} pp(r); return r;
+  } return b; /* a===0 */
+};
+
 const reshape=(x,y)=>{
   const reshape0=(x,y)=>{let r=[];while(y.length){r.push(y.splice(0,x));}return r;};
   while(x.length){y=reshape0(x.pop(),y);}

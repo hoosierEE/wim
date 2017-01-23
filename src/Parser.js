@@ -10,30 +10,30 @@
  it can instead be enqueued via requestAnimationFrame. */
 const Parser=(logging=0)=>{
   const chord={/* ChordName:{Action,KeyCode,[Mods]} */
-    'C-[':{act:'escape',code:'BracketLeft',mods:[2]},
-    'C-g':{act:'escape',code:'KeyG',mods:[2]},
-    'C-d':{act:'motion',code:'KeyD',mods:[2]},
-    'C-u':{act:'motion',code:'KeyU',mods:[2]},
-    'C-f':{act:'motion',code:'KeyF',mods:[2]},
-    'C-b':{act:'motion',code:'KeyB',mods:[2]},
-    'C-h':{act:'motion',code:'KeyH',mods:[2]},
-    'C-j':{act:'motion',code:'KeyJ',mods:[2]},
-    'C-k':{act:'motion',code:'KeyK',mods:[2]},
-    'C-l':{act:'motion',code:'KeyL',mods:[2]},
-    'C-v':{act:'visual',code:'KeyV',mods:[2]}
+    'C-[':{type:'escape',code:'BracketLeft',mods:[2]},
+    'C-g':{type:'escape',code:'KeyG',mods:[2]},
+    'C-d':{type:'motion',code:'KeyD',mods:[2]},
+    'C-u':{type:'motion',code:'KeyU',mods:[2]},
+    'C-f':{type:'motion',code:'KeyF',mods:[2]},
+    'C-b':{type:'motion',code:'KeyB',mods:[2]},
+    'C-h':{type:'motion',code:'KeyH',mods:[2]},
+    'C-j':{type:'motion',code:'KeyJ',mods:[2]},
+    'C-k':{type:'motion',code:'KeyK',mods:[2]},
+    'C-l':{type:'motion',code:'KeyL',mods:[2]},
+    'C-v':{type:'visual',code:'KeyV',mods:[2]}
   };
 
   const seq=(()=>{/* {String:{Action,ReverseName,MinimumMsBetween?}} */
     let t={
-      fd:{act:'escape',dt:200},
-      cc:{act:'phrase'},
-      dd:{act:'phrase'},
-      yy:{act:'phrase'},
-      gg:{act:'phrase'},
-      '``':{act:'phrase'},
-      cs:{act:'csurround'},
-      ds:{act:'dsurround'},
-      ys:{act:'ysurround'}
+      fd:{type:'escape',dt:200},
+      cc:{type:'phrase'},
+      dd:{type:'phrase'},
+      yy:{type:'phrase'},
+      gg:{type:'phrase'},
+      '``':{type:'phrase'},
+      cs:{type:'csurround'},
+      ds:{type:'dsurround'},
+      ys:{type:'ysurround'}
     }; for(let x in t){t[x].rn=[...x].reverse().join('');} return t;
   })();
 
@@ -118,39 +118,32 @@ const Parser=(logging=0)=>{
   const reset_stt=()=>{stt=st(); vals={keys:[],mods:[],part:[]};};
 
   const maybe_chord=(n)=>{
-    const m=n.KS[3][0]; if(!m){return null;}
-    const kc=Array.from(n.KC); if(kc.length<2){return null;}
+    const m=n[0].mods; if(!m){return null;}
+    const kc=n[0].chord; if(kc.length<2){return null;}
     for(let x in chord){
       const c=chord[x], keyp=kc.includes(c.code), modp=c.mods.some(y=>y===m);
-      if(modp && keyp){return c.act;}
+      if(modp && keyp){return ({type:c.type, take:kc.length});}
     } return null;
   };
 
-  // aaa -> [a, aa] [1]
-  // aaaa -> [aa, aa] [0,2]
-  // aaaaa -> [a, aa, aa] [1,3]
-  const prefix=(a,b)=>{
-    if(!b.startsWith(a)){return false;}
-    let r=[];for(let i=0;i<b.length;++i){
-      if(b.slice(i).startsWith(a)){r.push(i);}
-    } return r.length===1 || r[1]>a.length;
-  };
-
   const maybe_seq=(n)=>{
-    const ns=n.KS[0].join(''); if(2>ns.length){return null;}
-    const dts=n.KS[2], snds=dts.slice(1),
+    const ns=n.map(x=>x.key).join('');
+    if(2>ns.length){return null;}
+    const dts=n.map(x=>x.ts), snds=dts.slice(1),
           deltas=(s)=>!s.dt || dts.slice(0,s.rn.length-1).map((x,i)=>x-snds[i]).every(x=>s.dt>x);
     for(let x in seq){
       let s=seq[x];
-      if(prefix(s.rn,ns) && deltas(s)){return s.act;}
+      if(ns.startsWith(s.rn) && deltas(s)){return ({type:s.type, take:x.length});}
     } return null;
   };
 
   const maybe_atom=(n)=>{
-    const a=atom[n.KS[0][0]]; if(!a){return null;}
-    const m=n.KS[3][0], ns=Object.getOwnPropertyNames(stt);
+    const a=atom[n[0].key];
+    console.log(a);
+    if(!a){return null;}
+    const m=n[0].chord, ns=Object.getOwnPropertyNames(stt);
     for(let i in a){
-      if((0===m || 8===m) && ns.includes(a[i])){return a[i];}
+      if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], take:0});}
     } return null;
   };
 
@@ -163,38 +156,38 @@ const Parser=(logging=0)=>{
     } return nomatch;
   };
 
+  let inq=[];/* input queue */
   const update=(input)=>{
-    const fs=[maybe_chord,maybe_seq,maybe_atom],
-          R=(x,y=0)=>{let r={}; if(y&2){r=vals;} if(y&1){reset_stt();} r.status=x; return r;};
-    let a=null;
-    for(let f in fs){
-      if((a=fs[f](input))){
-        if('escape'===a){return R('quit',1);}
-        vals.keys.push(input.KS[0][0]);
-        vals.mods.push(input.KS[3][0]);
-        if(nomatch===(a=climb_tree(a))){return R('error',1);}
-        if(leaf===a){return R('done',3);}
-        if(branch===a){return R('continue',2);}
+    inq.unshift(input);/* prepend */
+    const fns=[maybe_chord,maybe_seq,maybe_atom],
+          R=(a,b)=>{let r={}; if(b&2){r=vals;} if(b&1){reset_stt();} r.status=a; return r;};
+    let t=null; for(let i in fns){
+      if((t=fns[i](inq))){
+        inq=inq.slice(t.take);
+        if('escape'===t.type){return R('quit',1);}
+        vals.keys.push(input.key);
+        vals.mods.push(input.mods);
+        t=climb_tree(t.type);
+        if(nomatch===t){return R('error',1);}
+        if(leaf===t){return R('done',3);}
+        if(branch===t){return R('continue',2);}
       }
     }
-    if((a=atom[input.KS[0][0]]) && a.includes('ascii')){return R('error',1);}
-    if(input.KS[3][0]){return R('ignore');}
+    if((t=atom[input.key]) && t.includes('ascii')){return R('error',1);}
+    if(input.mods){return R('ignore',0);}
     return R('error',1);
   };
 
-  /* {KeyChord}, [[Key],[Code],[ms],[Mod]] */
-  const kh={KC:new Set(), KS:[[],[],[],[]], KS_MAXLEN:10};
-
+  const KC=new Set();
   const key_handler=(ev,up)=>{/* First encode/enqueue the input, then schedule an update. */
-    kh.KC[up?'delete':'add'](ev.code); if(up){return null;}
-    const rk=[ev.key, ev.code, ev.timeStamp|0,
-              ['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0)],
-          ad={'KeyI':[10,5],'KeyR':[2,4]}[rk[1]];/* allow default */
-    if(ad && ad[navigator.platform==='MacIntel'|0]===rk[3]){return null;}
+    KC[up?'delete':'add'](ev.code); if(up){return null;}
+    const evt={key:ev.key, code:ev.code, ts:ev.timeStamp|0,
+               mods:['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((ev[b]|0)<<i),0),
+               chord:Array.from(KC)},
+          ad={'KeyI':[10,5],'KeyR':[2,4]}[evt[1]];/* allow default */
+    if(ad && ad[navigator.platform==='MacIntel'|0]===evt.mods){return null;}
     ev.preventDefault();
-    rk.forEach((_,i)=>{kh.KS[i].unshift(rk[i]); kh.KS[i]=kh.KS[i].slice(0,kh.KS_MAXLEN);});
-    let wu=update(kh);
-    return wu;
+    return update(evt);
   };
   return {key_handler};
 };
