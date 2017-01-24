@@ -24,17 +24,18 @@ const Parser=(logging=0)=>{
     {code:'KeyV',type:'visual',mods:[2]}
   ];
 
-  const seq=[
-    {rn:'df',type:'escape',dt:200},
-    {rn:'cc',type:'phrase'},
-    {rn:'dd',type:'phrase'},
-    {rn:'yy',type:'phrase'},
-    {rn:'gg',type:'phrase'},
-    {rn:'``',type:'phrase'},
-    {rn:'sc',type:'csurround'},
-    {rn:'sd',type:'dsurround'},
-    {rn:'sy',type:'ysurround'}
-  ];
+  const seq=[/* NOTE -- can be longer than 2 */
+    {code:'asdf',type:'escape',dt:200},
+    {code:'fd',type:'escape',dt:200},
+    {code:'cc',type:'phrase'},
+    {code:'dd',type:'phrase'},
+    {code:'yy',type:'phrase'},
+    {code:'gg',type:'phrase'},
+    {code:'``',type:'phrase'},
+    {code:'cs',type:'csurround'},
+    {code:'ds',type:'dsurround'},
+    {code:'ys',type:'ysurround'}
+  ].map(x=>{x.code=[...x.code].reverse().join(''); return x;});
 
   const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
   const atom=(()=>{/* {Char:[Type]} */
@@ -130,7 +131,7 @@ const Parser=(logging=0)=>{
     const ns=n.map(x=>x.key).join(''); if(2>ns.length){return null;}
     const dts=n.map(x=>x.ts), snds=dts.slice(1),
           deltas=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
-    for(let {rn:sr, dt:sd, type:st} of seq){
+    for(let {code:sr, dt:sd, type:st} of seq){
       if(ns.startsWith(sr) && deltas(sd,sr)){return ({type:st, take:sr.length});}
     } return null;
   };
