@@ -7,7 +7,8 @@
  I know, I know.
 
  Currently key_handler calls update directly, but if update becomes a bottleneck
- it can instead be enqueued via requestAnimationFrame, or maybe even put into a Worker thread. */
+ it can instead be enqueued via requestAnimationFrame (minor change),
+ or maybe even put into a Worker thread (major change). */
 const Parser=(logging=0)=>{
   const chord=[
     {code:'BracketLeft',type:'escape',mods:[2]},
@@ -57,8 +58,7 @@ const Parser=(logging=0)=>{
       undo:'u',
       verb:'cdy`',
       visual:'vV'
-    };
-    [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
+    }; [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     xs.ascii+=String.fromCharCode(9);
     let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
@@ -127,8 +127,7 @@ const Parser=(logging=0)=>{
   };
 
   const maybe_seq=(n)=>{
-    const ns=n.map(x=>x.key).join('');
-    if(2>ns.length){return null;}
+    const ns=n.map(x=>x.key).join(''); if(2>ns.length){return null;}
     const dts=n.map(x=>x.ts), snds=dts.slice(1),
           deltas=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
     for(let {rn:sr, dt:sd, type:st} of seq){
@@ -137,8 +136,7 @@ const Parser=(logging=0)=>{
   };
 
   const maybe_atom=(n)=>{
-    const a=atom[n[0].key];
-    if(!a){return null;}
+    const a=atom[n[0].key]; if(!a){return null;}
     const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
     for(let i in a){
       if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], take:0});}
@@ -154,20 +152,17 @@ const Parser=(logging=0)=>{
     } return nomatch;
   };
 
+  const fns=[maybe_chord,maybe_seq,maybe_atom],
+        R=(a,b)=>{let r={}; if(b&2){r=vals;} if(b&1){reset_stt();} r.status=a; return r;};
   const update=(input)=>{
-    inq.unshift(input);/* prepend */
-    const fns=[maybe_chord,maybe_seq,maybe_atom],
-          R=(a,b)=>{let r={}; if(b&2){r=vals;} if(b&1){reset_stt();} r.status=a; return r;};
+    inq.unshift(input);
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
         inq=inq.slice(t.take);
-
         if('escape'===t.type){return R('quit',1);}
-
         vals.keys.push(input.key);
         vals.mods.push(input.mods);
         t=climb_tree(t.type);
-
         if(nomatch===t){return R('error',1);}
         if(leaf===t){return R('done',3);}
         if(branch===t){return R('continue',2);}
@@ -179,12 +174,12 @@ const Parser=(logging=0)=>{
   };
 
   const KC=new Set();
-  const key_handler=(e,up)=>{/* First encode/enqueue the input, then schedule an update. */
+  const key_handler=(e,up)=>{
     KC[up?'delete':'add'](e.code); if(up){return null;}
     const evt={key:e.key, code:e.code, ts:e.timeStamp|0,
                mods:['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((e[b]|0)<<i),0),
                chord:Array.from(KC)},
-          ad={'KeyI':[10,5],'KeyR':[2,4]}[evt[1]];/* allow default */
+          ad={'KeyI':[10,5],'KeyR':[2,4]}[evt.code];/* allow default */
     if(ad && ad[navigator.platform==='MacIntel'|0]===evt.mods){return null;}
     e.preventDefault();
     return update(evt);
