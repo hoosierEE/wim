@@ -1,6 +1,3 @@
-/* pretty print */
-const pp=(a)=>console.log(JSON.stringify(a));
-
 /* TEST! */
 const p=Parser(),
       keydn=(a)=>p.key_handler(a,0),
@@ -28,14 +25,14 @@ const alphabet='abcdefghijklmnopqrstuvwxyz',
       mkes=[...alphabet].map(x=>mke(x,0));
 
 const test=(str)=>{
-  reset(); for(let i in str){
-    if(peck(mke(str[i],0)).status!=='continue'){return false;}
+  reset(); for(let s of str){
+    if(peck(mke(s,0)).status!=='continue'){return false;}
   } return true;
 };
 
 const addone=(str='')=>{
-  let r=[]; for(let i in alphabet){
-    if(test(str+alphabet[i])){r.push(str+alphabet[i]);}
+  let r=[]; for(let a of alphabet){
+    if(test(str+a)){r.push(str+a);}
   } return r.length?r:str;
 };
 
