@@ -62,6 +62,7 @@ const Parser=(logging=0)=>{
     }; [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     xs.ascii+=String.fromCharCode(9);
+    console.log(xs.ascii);
     let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
     t.Delete=t.Backspace=['edit'];
@@ -69,17 +70,15 @@ const Parser=(logging=0)=>{
     return t;
   })();
 
-  /* Leader Tree */
-  const lt=()=>({tab:leaf, ascii:leaf});/* TODO */
+  const lt=()=>({tab:leaf, ascii:leaf});/* TODO -- Leader Tree */
 
   const leaf=1, branch=2, nomatch=3;
   const st=(n=0)=>{/* State Tree */
     const bt=({bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
           re=({enter:leaf, get ascii(){return this;}});
     return((x)=>{
-      if(n===1){
-        delete x.mult_0;
-        Object.defineProperty(x,'mult_N',{get:function(){return this;}});
+      if(n===1){/* replace mult_0 with mult_N */
+        delete x.mult_0; Object.defineProperty(x,'mult_N',{get:function(){return this;}});
       } return x;
     })({
       get mult_0(){return st(1);},
@@ -123,7 +122,7 @@ const Parser=(logging=0)=>{
     for(let {code:cc, mods:cm, type:ct} of chord){
       const keyp=kc.includes(cc),
             modp=cm.some(y=>y===m);
-      if(modp && keyp){return ({type:ct, take:kc.length});}
+      if(modp && keyp){return ({type:ct, len:kc.length});}
     } return null;
   };
 
@@ -132,7 +131,7 @@ const Parser=(logging=0)=>{
     const dts=n.map(x=>x.ts), snds=dts.slice(1),
           deltas=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
     for(let {code:sr, dt:sd, type:st} of seq){
-      if(ns.startsWith(sr) && deltas(sd,sr)){return ({type:st, take:sr.length});}
+      if(ns.startsWith(sr) && deltas(sd,sr)){return ({type:st, len:sr.length});}
     } return null;
   };
 
@@ -140,7 +139,7 @@ const Parser=(logging=0)=>{
     const a=atom[n[0].key]; if(!a){return null;}
     const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
     for(let i in a){
-      if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], take:0});}
+      if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
     } return null;
   };
 
@@ -156,10 +155,10 @@ const Parser=(logging=0)=>{
   const fns=[maybe_chord,maybe_seq,maybe_atom],
         R=(a,b)=>{let r={}; if(b&2){r=vals;} if(b&1){reset_stt();} r.status=a; return r;};
   const update=(input)=>{
-    inq.unshift(input);
+    inq.unshift(input);/* inq -> (input,inq) */
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
-        inq=inq.slice(t.take);
+        inq=inq.slice(t.len);/* (t.len) }. inq */
         if('escape'===t.type){return R('quit',1);}
         vals.keys.push(input.key);
         vals.mods.push(input.mods);
@@ -169,20 +168,20 @@ const Parser=(logging=0)=>{
         if(branch===t){return R('continue',2);}
       }
     }
-    if((t=atom[input.key]) && t.includes('ascii')){return R('error',1);}
+    if((t=atom[input.key]) && t.includes('ascii')){return R('ignore',0);}
     if(input.mods){return R('ignore',0);}
     return R('error',1);
   };
 
   const KC=new Set();
-  const key_handler=(e,up)=>{
-    KC[up?'delete':'add'](e.code); if(up){return null;}
-    const evt={key:e.key, code:e.code, ts:e.timeStamp|0,
-               mods:['altKey','ctrlKey','metaKey','shiftKey'].reduce((a,b,i)=>a|((e[b]|0)<<i),0),
+  const key_handler=(a,b)=>{
+    KC[b?'delete':'add'](a.code); if(b){return null;}
+    const evt={key:a.key, code:a.code, ts:a.timeStamp|0,
+               mods:['altKey','ctrlKey','metaKey','shiftKey'].reduce((x,y,z)=>x|((a[y]|0)<<z),0),
                chord:Array.from(KC)},
           ad={'KeyI':[10,5],'KeyR':[2,4]}[evt.code];/* allow default */
     if(ad && ad[navigator.platform==='MacIntel'|0]===evt.mods){return null;}
-    e.preventDefault();
+    a.preventDefault();
     return update(evt);
   };
   return {key_handler};
