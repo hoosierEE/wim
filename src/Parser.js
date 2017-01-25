@@ -31,11 +31,11 @@ const Parser=(logging=0)=>{
     {code:'dd',type:'phrase'},
     {code:'yy',type:'phrase'},
     {code:'gg',type:'phrase'},
-    {code:'``',type:'phrase'}
+    {code:'``',type:'phrase'},
     {code:'cs',type:'csurround'},
     {code:'ds',type:'dsurround'},
-    {code:'yss',type:'ysurroundline'},
-    {code:'ys',type:'ysurround'}
+    {code:'ys',type:'ysurround'},
+    {code:'yss',type:'ysurroundline'}
   ].map(x=>{x.code=[...x.code].reverse().join(''); return x;});
 
   const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
@@ -46,14 +46,14 @@ const Parser=(logging=0)=>{
       edit:'oOpPrxX~',
       insert:'aAiI',
       leader:' ',
-      modifier:'ai',
+      modifier:'ais',
       motion:'hjkl',
       mult_0:'123456789',
       mult_N:'0123456789',
       repeat:'.',
       search:'/?',
       seek:'fFtT',
-      surround:'s',
+      // surround:'s',
       tag:' 0123456789=:-',
       tag_end:'/>',
       tag_start:'t',
@@ -98,21 +98,23 @@ const Parser=(logging=0)=>{
       seek:{ascii:leaf},
       visual:leaf,
       verb:{
+        modifier:{
+          seek:{ascii:leaf},
+          surround:{
+            csurround:{bracket:bt, tag_start:bt},
+            dsurround:{bracket:leaf, tag_start:leaf},
+            ysurround:{
+              bracket:bt,
+              modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
+              motion:bt,
+              seek:{ascii:bt},
+              text_object:bt,
+              ysurroundline:bt}},
+          text_object:leaf},
         motion:leaf,
         phrase:leaf,
         text_object:leaf,
-        seek:{ascii:leaf},
-        surround:{
-          csurround:{bracket:bt, tag_start:bt},
-          dsurround:{bracket:leaf, tag_start:leaf},
-          ysurround:{
-            ysurroundline:bt,
-            bracket:bt,
-            modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
-            motion:bt,
-            seek:{ascii:bt},
-            text_object:bt}},
-        modifier:{seek:{ascii:leaf}, text_object:leaf}}});
+        seek:{ascii:leaf}}});
   };
 
   /* Infernal State Variables  */
