@@ -138,9 +138,8 @@ const Parser=(logging=0)=>{
   const maybe_atom=(n)=>{
     const a=atom[n[0].key]; if(!a){return null;}
     const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
-    console.log(a);
     for(let i in a){
-      if((0===m || 8===m) && ns.includes(a[i])){console.log(a[i]); return ({type:a[i], len:0});}
+      if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
     } return null;
   };
 
