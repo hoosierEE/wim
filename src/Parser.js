@@ -31,9 +31,10 @@ const Parser=(logging=0)=>{
     {code:'dd',type:'phrase'},
     {code:'yy',type:'phrase'},
     {code:'gg',type:'phrase'},
-    {code:'``',type:'phrase'},
+    {code:'``',type:'phrase'}
     {code:'cs',type:'csurround'},
     {code:'ds',type:'dsurround'},
+    {code:'yss',type:'ysurroundline'},
     {code:'ys',type:'ysurround'}
   ].map(x=>{x.code=[...x.code].reverse().join(''); return x;});
 
@@ -52,6 +53,7 @@ const Parser=(logging=0)=>{
       repeat:'.',
       search:'/?',
       seek:'fFtT',
+      surround:'s',
       tag:' 0123456789=:-',
       tag_end:'/>',
       tag_start:'t',
@@ -62,7 +64,6 @@ const Parser=(logging=0)=>{
     }; [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     xs.ascii+=String.fromCharCode(9);
-    console.log(xs.ascii);
     let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
     t.Delete=t.Backspace=['edit'];
@@ -87,6 +88,7 @@ const Parser=(logging=0)=>{
       edit:leaf,
       arrow:leaf,
       escape:leaf,
+      insert:leaf,
       motion:leaf,
       phrase:leaf,
       repeat:leaf,
@@ -100,29 +102,28 @@ const Parser=(logging=0)=>{
         phrase:leaf,
         text_object:leaf,
         seek:{ascii:leaf},
-        modifier:{seek:{ascii:leaf}, text_object:leaf},
-        csurround:{bracket:bt, tag_start:bt},
-        dsurround:{bracket:leaf, tag_start:leaf},
-        ysurround:{
-          bracket:bt,
-          modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
-          motion:bt,
-          seek:{ascii:bt},
-          text_object:bt}}});
+        surround:{
+          csurround:{bracket:bt, tag_start:bt},
+          dsurround:{bracket:leaf, tag_start:leaf},
+          ysurround:{
+            ysurroundline:bt,
+            bracket:bt,
+            modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
+            motion:bt,
+            seek:{ascii:bt},
+            text_object:bt}},
+        modifier:{seek:{ascii:leaf}, text_object:leaf}}});
   };
 
   /* Infernal State Variables  */
   let inq=[], stt=st(), vals={keys:[],mods:[],part:[]};
   const get_stt=()=>stt;
-  const reset_stt=()=>{stt=st(); inq=[]; vals={keys:[],mods:[],part:[]};};
 
   const maybe_chord=(n)=>{
     const m=n[0].mods; if(!m){return null;}
     const kc=n[0].chord; if(kc.length<2){return null;}
     for(let {code:cc, mods:cm, type:ct} of chord){
-      const keyp=kc.includes(cc),
-            modp=cm.some(y=>y===m);
-      if(modp && keyp){return ({type:ct, len:kc.length});}
+      if(kc.includes(cc) && cm.some(y=>y===m)){return ({type:ct, len:kc.length});}
     } return null;
   };
 
@@ -153,22 +154,31 @@ const Parser=(logging=0)=>{
   };
 
   const fns=[maybe_chord,maybe_seq,maybe_atom],
-        R=(a,b)=>{let r={}; if(b&2){r=vals;} if(b&1){reset_stt();} r.status=a; return r;};
+        R=(a,b,c)=>{
+        // R=(a,b)=>{
+          let r={};
+          if(2&b){r=vals;}
+          if(1&b){stt=st(); /*inq=[];*/ vals={keys:[],mods:[],part:[]};}
+          if(c){inq=[];}
+          r.status=a;
+          return r;
+        };
+
   const update=(input)=>{
-    inq.unshift(input);/* inq -> (input,inq) */
+    inq.unshift(input);/* inq =: (input,inq) */
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
         inq=inq.slice(t.len);/* (t.len) }. inq */
-        if('escape'===t.type){return R('quit',1);}
+        if('escape'===t.type){return R('quit',1,1);} /* reset stt */
         vals.keys.push(input.key);
         vals.mods.push(input.mods);
         t=climb_tree(t.type);
-        if(nomatch===t){return R('error',1);}
-        if(leaf===t){return R('done',3);}
+        if(nomatch===t){return R('error',1);} /* reset stt */
+        if(leaf===t){return R('done',3,1);} /* reset stt */
         if(branch===t){return R('continue',2);}
       }
     }
-    if((t=atom[input.key]) && t.includes('ascii')){return R('ignore',0);}
+    if((t=atom[input.key]) && t.includes('ascii')){return R('wut?',0,1);}/* reset inq */
     if(input.mods){return R('ignore',0);}
     return R('error',1);
   };
