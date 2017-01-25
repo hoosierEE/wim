@@ -169,7 +169,6 @@ const Parser=(logging=0)=>{
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
         inq=inq.slice(t.len);
-        console.log(t.type);
         if('escape'===t.type){return R('quit',1);}
         if(t.ignore){return R('ignore',0);}
         vals.keys.push(input.key);
