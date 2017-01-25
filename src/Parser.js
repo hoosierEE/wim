@@ -17,10 +17,10 @@ const Parser=(logging=0)=>{
     {code:'KeyU',type:'motion',mods:[2]},
     {code:'KeyF',type:'motion',mods:[2]},
     {code:'KeyB',type:'motion',mods:[2]},
-    {code:'KeyH',type:'motion',mods:[2]},
-    {code:'KeyJ',type:'motion',mods:[2]},
-    {code:'KeyK',type:'motion',mods:[2]},
-    {code:'KeyL',type:'motion',mods:[2]},
+    {code:'KeyH',type:'i_motion',mods:[2]},
+    {code:'KeyJ',type:'i_motion',mods:[2]},
+    {code:'KeyK',type:'i_motion',mods:[2]},
+    {code:'KeyL',type:'i_motion',mods:[2]},
     {code:'KeyV',type:'visual',mods:[2]}
   ];
 
@@ -53,7 +53,7 @@ const Parser=(logging=0)=>{
       repeat:'.',
       search:'/?',
       seek:'fFtT',
-      // surround:'s',
+      surround:'s',
       tag:' 0123456789=:-',
       tag_end:'/>',
       tag_start:'t',
@@ -65,8 +65,9 @@ const Parser=(logging=0)=>{
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     xs.ascii+=String.fromCharCode(9);
     let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
+    ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase+x.slice(1)]=[x];});
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
-    t.Delete=t.Backspace=['edit'];
+    t.Delete=t.Backspace=['edit']; t.PageDown=t.PageUp=t.Home=t.End=['motion'];
     ['Right','Left','Up','Down'].map(x=>t['Arrow'+x]=['arrow']);
     return t;
   })();
@@ -87,7 +88,6 @@ const Parser=(logging=0)=>{
       tab:leaf,
       edit:leaf,
       arrow:leaf,
-      escape:leaf,
       insert:leaf,
       motion:leaf,
       phrase:leaf,
@@ -117,72 +117,73 @@ const Parser=(logging=0)=>{
         seek:{ascii:leaf}}});
   };
 
-  /* Infernal State Variables  */
-  let inq=[], stt=st(), vals={keys:[],mods:[],part:[]};
-  const get_stt=()=>stt;
-
   const maybe_chord=(n)=>{
     const m=n[0].mods; if(!m){return null;}
-    const kc=n[0].chord; if(kc.length<2){return null;}
+    const kc=n[0].chord, mods=['Alt','Control','Meta','Shift'];
+    if(kc.every(x=>mods.reduce((a,b)=>a|x.startsWith(b)|0,0))){return ({ignore:1});}
     for(let {code:cc, mods:cm, type:ct} of chord){
       if(kc.includes(cc) && cm.some(y=>y===m)){return ({type:ct, len:kc.length});}
     } return null;
   };
 
-  const maybe_seq=(n)=>{
+  const maybe_sequence=(n)=>{
     const ns=n.map(x=>x.key).join(''); if(2>ns.length){return null;}
     const dts=n.map(x=>x.ts), snds=dts.slice(1),
-          deltas=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
+          fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
     for(let {code:sr, dt:sd, type:st} of seq){
-      if(ns.startsWith(sr) && deltas(sd,sr)){return ({type:st, len:sr.length});}
+      if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:sr.length});}
     } return null;
   };
 
   const maybe_atom=(n)=>{
     const a=atom[n[0].key]; if(!a){return null;}
     const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
+    console.log(a);
     for(let i in a){
-      if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
+      if((0===m || 8===m) && ns.includes(a[i])){console.log(a[i]); return ({type:a[i], len:0});}
     } return null;
   };
 
   /* Input => (leaf|branch|nomatch) */
-  const climb_tree=(x)=>{
-    let z=stt[x]; if(z){
-      vals.part.push(x);
-      if(leaf===z){return leaf;}
-      stt=z; return branch;
+  const climb_tree=(a)=>{
+    let r=stt[a]; if(r){
+      vals.part.push(a);
+      if(leaf===r){return leaf;}
+      stt=r; return branch;
     } return nomatch;
   };
 
-  const fns=[maybe_chord,maybe_seq,maybe_atom],
-        R=(a,b,c)=>{
-        // R=(a,b)=>{
-          let r={};
-          if(2&b){r=vals;}
-          if(1&b){stt=st(); /*inq=[];*/ vals={keys:[],mods:[],part:[]};}
-          if(c){inq=[];}
-          r.status=a;
-          return r;
-        };
+  const fns=[maybe_chord,maybe_sequence,maybe_atom],
+        reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
+        R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
 
+  /* Internal State Variables  */
+  let [stt,vals,inq]=reset();
+
+  /* update -- given a new KeyboardEvent, what changes to the internal state? Priority of
+   (Chord -> Sequence -> Atom) implies that Sequences are the most tricky, since they are
+   made up of Atoms.  So as we're processing the input stream, we should distinguish
+   between "invalid Atom" and "partial Sequence". */
   const update=(input)=>{
-    inq.unshift(input);/* inq =: (input,inq) */
+    inq.unshift(input);
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
-        inq=inq.slice(t.len);/* (t.len) }. inq */
-        if('escape'===t.type){return R('quit',1,1);} /* reset stt */
+        inq=inq.slice(t.len);
+        console.log(t.type);
+        if('escape'===t.type){return R('quit',1);}
+        if(t.ignore){return R('ignore',0);}
         vals.keys.push(input.key);
         vals.mods.push(input.mods);
+
+        /* TODO -- partial Sequence */
+        // if(something){return R('ignore',0);}
+
         t=climb_tree(t.type);
-        if(nomatch===t){return R('error',1);} /* reset stt */
-        if(leaf===t){return R('done',3,1);} /* reset stt */
+        if(nomatch===t){return R('error',1);}
+        if(leaf===t){return R('done',3);}
         if(branch===t){return R('continue',2);}
       }
-    }
-    if((t=atom[input.key]) && t.includes('ascii')){return R('wut?',0,1);}/* reset inq */
-    if(input.mods){return R('ignore',0);}
-    return R('error',1);
+    } return R('error',1);
   };
 
   const KC=new Set();
