@@ -130,11 +130,12 @@ const Parser=(logging=0)=>{
   };
 
   const atom_or_null=(n)=>{
-    const a=atom[n[0].key]; if(!a){return null;}
+    const types=atom[n[0].key]; if(!types){return null;}
+    if(types.join()==='escape'){return ({type:'escape', len:0});}
     const m=n[0].mods,
           ns=Object.getOwnPropertyNames(stt);/* hmm... */
-    for(let i in a){
-      if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
+    for(let i in types){
+      if((0===m || 8===m) && ns.includes(types[i])){return ({type:types[i], len:0});}
     } return null;
   };
 
@@ -148,14 +149,14 @@ const Parser=(logging=0)=>{
   };
 
   const fns=[chord_or_null,sequence_or_null,atom_or_null],
-        reset=()=>[st(),{keys:[],mods:[],part:[]},[]];
+        reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
+        R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
 
   /* State Variables */
   let [stt,vals,inq]=reset();
 
   /* update -- given a new KeyboardEvent, what changes to the internal state? */
   const update=(input)=>{
-    const R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
     inq.unshift(input);
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
@@ -183,5 +184,5 @@ const Parser=(logging=0)=>{
     a.preventDefault();
     return update(evt);
   };
-  return {key_handler};
+  return ({key_handler});
 };
