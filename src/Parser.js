@@ -122,14 +122,13 @@ const Parser=(logging=0)=>{
     const dts=n.map(x=>x.ts), snds=dts.slice(1),
           fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
     for(let {code:sr, dt:sd, type:st} of sequence){
-      if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:sr.length});}
+      if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:0});}
     } return null;
   };
 
   const maybe_atom=(n)=>{
     const a=atom[n[0].key]; if(!a){return null;}
-    const m=n[0].mods,
-          ns=Object.getOwnPropertyNames(stt); /* hmm... */
+    const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
     for(let i in a){
       if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
     } return null;
