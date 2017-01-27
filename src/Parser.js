@@ -1,12 +1,8 @@
 'use strict';
 /* Parser.js -- transforms keyboard input into tokens.
- + key_handler: KeyboardEvent -> ModifiedKeyboardEvent && ()
- + update: ModifiedKeyboardEvent -> ParserStatus
+ + key_handler :: KeyboardEvent -> State|Object
 
- key_handler ALSO updates the global variable KC, which holds all the currently-pressed keys.
- I know, I know.
-
- Currently key_handler calls update directly, but if update becomes a bottleneck
+ Calls update internally/directly, but if update becomes a bottleneck
  it can instead be enqueued via requestAnimationFrame (minor change),
  or maybe even put into a Worker thread (major change). */
 const Parser=(logging=0)=>{
@@ -24,18 +20,14 @@ const Parser=(logging=0)=>{
     {code:'KeyV',type:'visual',mods:[2]}
   ];
 
-  const seq=[/* NOTE -- can be longer than 2 */
-    {code:'asdf',type:'escape',dt:200},
+  const sequence=[/* NOTE -- can be longer than 2 */
     {code:'fd',type:'escape',dt:200},
     {code:'cc',type:'phrase'},
     {code:'dd',type:'phrase'},
     {code:'yy',type:'phrase'},
-    {code:'gg',type:'phrase'},
-    {code:'``',type:'phrase'},
     {code:'cs',type:'csurround'},
     {code:'ds',type:'dsurround'},
-    {code:'ys',type:'ysurround'},
-    {code:'yss',type:'ysurroundline'}
+    {code:'ys',type:'ysurround'}
   ].map(x=>{x.code=[...x.code].reverse().join(''); return x;});
 
   const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
@@ -46,7 +38,7 @@ const Parser=(logging=0)=>{
       edit:'oOpPrxX~',
       insert:'aAiI',
       leader:' ',
-      modifier:'ais',
+      modifier:'ai',
       motion:'hjkl',
       mult_0:'123456789',
       mult_N:'0123456789',
@@ -60,7 +52,8 @@ const Parser=(logging=0)=>{
       text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
       undo:'u',
       verb:'cdy`',
-      visual:'vV'
+      visual:'vV',
+      ysurround_line:'s'
     }; [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     xs.ascii+=String.fromCharCode(9);
@@ -90,7 +83,6 @@ const Parser=(logging=0)=>{
       arrow:leaf,
       insert:leaf,
       motion:leaf,
-      phrase:leaf,
       repeat:leaf,
       text_object:leaf,
       undo:leaf,
@@ -100,19 +92,18 @@ const Parser=(logging=0)=>{
       verb:{
         modifier:{
           seek:{ascii:leaf},
-          surround:{
-            csurround:{bracket:bt, tag_start:bt},
-            dsurround:{bracket:leaf, tag_start:leaf},
-            ysurround:{
-              bracket:bt,
-              modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
-              motion:bt,
-              seek:{ascii:bt},
-              text_object:bt,
-              ysurroundline:bt}},
           text_object:leaf},
         motion:leaf,
         phrase:leaf,
+        csurround:{bracket:bt, tag_start:bt},
+        dsurround:{bracket:leaf, tag_start:leaf},
+        ysurround:{
+          bracket:bt,
+          modifier:{motion:bt, seek:{ascii:bt}, text_object:bt},
+          motion:bt,
+          seek:{ascii:bt},
+          text_object:bt,
+          ysurround_line:bt},
         text_object:leaf,
         seek:{ascii:leaf}}});
   };
@@ -127,17 +118,18 @@ const Parser=(logging=0)=>{
   };
 
   const maybe_sequence=(n)=>{
-    const ns=n.map(x=>x.key).join(''); if(2>ns.length){return null;}
+    const ns=n.map(x=>x.key).join(''); if(2<ns.length){return null;}
     const dts=n.map(x=>x.ts), snds=dts.slice(1),
           fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
-    for(let {code:sr, dt:sd, type:st} of seq){
+    for(let {code:sr, dt:sd, type:st} of sequence){
       if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:sr.length});}
     } return null;
   };
 
   const maybe_atom=(n)=>{
     const a=atom[n[0].key]; if(!a){return null;}
-    const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
+    const m=n[0].mods,
+          ns=Object.getOwnPropertyNames(stt); /* hmm... */
     for(let i in a){
       if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
     } return null;
@@ -156,13 +148,10 @@ const Parser=(logging=0)=>{
         reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
         R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
 
-  /* Internal State Variables  */
+  /* State Variables */
   let [stt,vals,inq]=reset();
 
-  /* update -- given a new KeyboardEvent, what changes to the internal state? Priority of
-   (Chord -> Sequence -> Atom) implies that Sequences are the most tricky, since they are
-   made up of Atoms.  So as we're processing the input stream, we should distinguish
-   between "invalid Atom" and "partial Sequence". */
+  /* update -- given a new KeyboardEvent, what changes to the internal state? */
   const update=(input)=>{
     inq.unshift(input);
     let t=null; for(let fn of fns){
@@ -172,10 +161,6 @@ const Parser=(logging=0)=>{
         if(t.ignore){return R('ignore',0);}
         vals.keys.push(input.key);
         vals.mods.push(input.mods);
-
-        /* TODO -- partial Sequence */
-        // if(something){return R('ignore',0);}
-
         t=climb_tree(t.type);
         if(nomatch===t){return R('error',1);}
         if(leaf===t){return R('done',3);}
