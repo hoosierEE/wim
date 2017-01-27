@@ -28,13 +28,11 @@ const Parser=(logging=0)=>{
     {code:'yy',type:'phrase'},
     {code:'cs',type:'csurround'},
     {code:'ds',type:'dsurround'},
-    {code:'yss',type:'ysurround_line'},
-    {code:'ys',type:'ysurround'}
+    {code:'ys',type:'ysurround'},/* NOTE -- this is a prefix of ysurround_line, AND is in the behavior tree. */
+    {code:'yss',type:'ysurround_line'}
   ].map(x=>{x.code=[...x.code].reverse().join('');return x;});
 
   const atom=(()=>{/* {Char:[Type]} */
-    const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
-    const less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
     let xs={
       ascii:'',
       bracket:'[{()}]',
@@ -56,17 +54,19 @@ const Parser=(logging=0)=>{
       undo:'u',
       verb:'cdy`',
       visual:'vV'
-    }; [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
+    };
+    const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
+    [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
+    const less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
     xs.ascii_partial=less(xs.ascii,(xs.bracket+'t<>')).join('');
     let t={}; for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
     ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase()+x.slice(1)]=[x];});
-    t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
-    t.Delete=t.Backspace=['edit']; t.PageDown=t.PageUp=t.Home=t.End=['motion'];
-    ['Right','Left','Up','Down'].map(x=>t['Arrow'+x]=['arrow']);
+    ['Down','Left','Right','Up'].map(x=>t['Arrow'+x]=['arrow']);
+    t.PageDown=t.PageUp=t.Home=t.End=['motion'];
+    t.Delete=t.Backspace=['edit'];
     return t;
   })();
-
 
   const leaf=1, branch=2, nomatch=3;
   const lt=()=>({tab:leaf, ascii:leaf});/* TODO -- Leader Tree */
@@ -119,8 +119,6 @@ const Parser=(logging=0)=>{
     } return null;
   };
 
-  // const common_suffix=(a,b)=>common_prefix(...[a,b].map(x=>[...x].reverse().join('')));
-
   const sequence_or_null=(n)=>{
     const ns=n.map(x=>x.key).join(''), dts=n.map(x=>x.ts), snds=dts.slice(1),
           fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x),
@@ -150,14 +148,14 @@ const Parser=(logging=0)=>{
   };
 
   const fns=[chord_or_null,sequence_or_null,atom_or_null],
-        reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
-        R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
+        reset=()=>[st(),{keys:[],mods:[],part:[]},[]];
 
   /* State Variables */
   let [stt,vals,inq]=reset();
 
   /* update -- given a new KeyboardEvent, what changes to the internal state? */
   const update=(input)=>{
+    const R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
     inq.unshift(input);
     let t=null; for(let fn of fns){
       if((t=fn(inq))){
