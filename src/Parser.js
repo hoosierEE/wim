@@ -177,7 +177,7 @@ const Parser=(logging=0)=>{
   const key_handler=(a,b)=>{
     KC[b?'delete':'add'](a.code); if(b){return null;}
     const evt={key:a.key, code:a.code, ts:a.timeStamp|0,
-               mods:['altKey','ctrlKey','metaKey','shiftKey'].reduce((x,y,z)=>x|((a[y]|0)<<z),0),
+               mods:parseInt(['shiftKey','metaKey','ctrlKey','altKey'].map(x=>a[x]|0).join(''),2),
                chord:Array.from(KC)},
           ad={'KeyI':[10,5],'KeyR':[2,4]}[evt.code];/* allow default */
     if(ad && ad[navigator.platform==='MacIntel'|0]===evt.mods){return null;}
