@@ -2,9 +2,10 @@
 /* Parser.js -- transforms keyboard input into tokens.
  + key_handler :: KeyboardEvent -> State|Object
 
- Calls update internally/directly, but if update becomes a bottleneck
- it can instead be enqueued via requestAnimationFrame (minor change),
- or maybe even put into a Worker thread (major change). */
+ key_handler calls update synchronously, but if this someday hurts performance
+ it could easily be converted to a requestAnimationFrame callback, or with
+ more work, it could be sequestered into a Worker thread.
+ */
 const Parser=(logging=0)=>{
   const chord=[
     {code:'BracketLeft',type:'escape',mods:[2]},
@@ -20,18 +21,20 @@ const Parser=(logging=0)=>{
     {code:'KeyV',type:'visual',mods:[2]}
   ];
 
-  const sequence=[/* NOTE -- can be longer than 2 */
+  const sequence=[/* NOTE -- these can't overlap other actions (including atoms), use sparingly. */
     {code:'fd',type:'escape',dt:200},
     {code:'cc',type:'phrase'},
     {code:'dd',type:'phrase'},
     {code:'yy',type:'phrase'},
     {code:'cs',type:'csurround'},
     {code:'ds',type:'dsurround'},
+    {code:'yss',type:'ysurround_line'},
     {code:'ys',type:'ysurround'}
-  ].map(x=>{x.code=[...x.code].reverse().join(''); return x;});
+  ].map(x=>{x.code=[...x.code].reverse().join('');return x;});
 
-  const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
   const atom=(()=>{/* {Char:[Type]} */
+    const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
+    const less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
     let xs={
       ascii:'',
       bracket:'[{()}]',
@@ -52,24 +55,23 @@ const Parser=(logging=0)=>{
       text_object:'0^$%{}()[]<>`"\'bBeEpwWG',
       undo:'u',
       verb:'cdy`',
-      visual:'vV',
-      ysurround_line:'s'
+      visual:'vV'
     }; [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
-    xs.ascii+=String.fromCharCode(9);
-    let t={}; for(let x in xs){[...xs[x]].forEach(y=>t[y]?t[y].push(x):t[y]=[x]);}
-    ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase+x.slice(1)]=[x];});
+    xs.ascii_partial=less(xs.ascii,(xs.bracket+'t<>')).join('');
+    let t={}; for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
+    ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase()+x.slice(1)]=[x];});
     t.Enter=['enter']; t.Escape=['escape']; t.Tab=['tab'];
     t.Delete=t.Backspace=['edit']; t.PageDown=t.PageUp=t.Home=t.End=['motion'];
     ['Right','Left','Up','Down'].map(x=>t['Arrow'+x]=['arrow']);
     return t;
   })();
 
-  const lt=()=>({tab:leaf, ascii:leaf});/* TODO -- Leader Tree */
 
   const leaf=1, branch=2, nomatch=3;
+  const lt=()=>({tab:leaf, ascii:leaf});/* TODO -- Leader Tree */
   const st=(n=0)=>{/* State Tree */
-    const bt=({bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
+    const bt=({ascii_partial:leaf, bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
           re=({enter:leaf, get ascii(){return this;}});
     return((x)=>{
       if(n===1){/* replace mult_0 with mult_N */
@@ -108,7 +110,7 @@ const Parser=(logging=0)=>{
         seek:{ascii:leaf}}});
   };
 
-  const maybe_chord=(n)=>{
+  const chord_or_null=(n)=>{
     const m=n[0].mods; if(!m){return null;}
     const kc=n[0].chord, mods=['Alt','Control','Meta','Shift'];
     if(kc.every(x=>mods.reduce((a,b)=>a|x.startsWith(b)|0,0))){return ({ignore:1});}
@@ -117,18 +119,22 @@ const Parser=(logging=0)=>{
     } return null;
   };
 
-  const maybe_sequence=(n)=>{
-    const ns=n.map(x=>x.key).join(''); if(2<ns.length){return null;}
-    const dts=n.map(x=>x.ts), snds=dts.slice(1),
-          fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
+  // const common_suffix=(a,b)=>common_prefix(...[a,b].map(x=>[...x].reverse().join('')));
+
+  const sequence_or_null=(n)=>{
+    const ns=n.map(x=>x.key).join(''), dts=n.map(x=>x.ts), snds=dts.slice(1),
+          fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x),
+          lcp=(a,b)=>{let r=[];for(let i in b){if(a[i]===b[i]){r.push(a[i]);}else{break;}}return r.join('');};
     for(let {code:sr, dt:sd, type:st} of sequence){
-      if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:0});}
+      let cp=lcp(ns,sr);
+      if(cp===sr && fast_enough(sd,sr)){return ({type:st, len:0});}
     } return null;
   };
 
-  const maybe_atom=(n)=>{
+  const atom_or_null=(n)=>{
     const a=atom[n[0].key]; if(!a){return null;}
-    const m=n[0].mods, ns=Object.getOwnPropertyNames(stt);
+    const m=n[0].mods,
+          ns=Object.getOwnPropertyNames(stt);/* hmm... */
     for(let i in a){
       if((0===m || 8===m) && ns.includes(a[i])){return ({type:a[i], len:0});}
     } return null;
@@ -143,7 +149,7 @@ const Parser=(logging=0)=>{
     } return nomatch;
   };
 
-  const fns=[maybe_chord,maybe_sequence,maybe_atom],
+  const fns=[chord_or_null,sequence_or_null,atom_or_null],
         reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
         R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
 
