@@ -122,9 +122,13 @@ const Parser=(logging=0)=>{
   const sequence_or_null=(n)=>{
     const ns=n.map(x=>x.key).join(''), dts=n.map(x=>x.ts), snds=dts.slice(1),
           fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x),
-          lcp=(a,b)=>{let r=[];for(let i in b){if(a[i]===b[i]){r.push(a[i]);}else{break;}}return r.join('');};
+          longest_common_prefix=(a,b)=>{
+            let r=[];for(let i in b){
+              if(a[i]!==b[i]){break;}r.push(a[i]);
+            } return r.join('');
+          };
     for(let {code:sr, dt:sd, type:st} of sequence){
-      let cp=lcp(ns,sr);
+      let cp=longest_common_prefix(ns,sr);
       if(cp===sr && fast_enough(sd,sr)){return ({type:st, len:0});}
     } return null;
   };
@@ -184,5 +188,5 @@ const Parser=(logging=0)=>{
     a.preventDefault();
     return update(evt);
   };
-  return ({key_handler});
+  return {key_handler};
 };
