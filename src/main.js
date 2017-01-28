@@ -1,8 +1,9 @@
 const ctx=document.getElementById('c').getContext('2d'), par=Parser(1);
 
-const Window=()=>{}; /* Outermost HTML document. */
-const Pane=()=>{}; /* Can be many of these per Window. Handle different duties (minibuf, modeline, etc.) */
-const Doc=()=>{}; /* 1 per Pane, tyipcally shorter lifespan than Pane. */
+/* How to group different bits of the app...? */
+const Window=()=>{}; /* Displays the app itself. */
+const Pane=()=>{}; /* Divides the app into smaller sections.  Each section can have its own content. */
+const Doc=()=>{}; /* Text you can edit. */
 
 const lines="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore e dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
 
