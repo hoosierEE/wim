@@ -26,7 +26,7 @@ const alphabet='abcdefghijklmnopqrstuvwxyz',
 
 const test=(str)=>{
   reset(); for(let s of str){
-    if(peck(mke(s,0)).status!=='continue'){return false;}
+    if(peck(mkes[alphabet.indexOf(s)]).status!=='continue'){return false;}
   } return true;
 };
 
@@ -39,5 +39,4 @@ const addone=(str='')=>{
 const flatten=(x)=>x.reduce((a,b)=>a.concat(Array.isArray(b)?flatten(b):b),[]);
 const addall=(x)=>flatten(x.map(addone));
 const longseq=(x,n)=>{while(n-->0){x=addall(x);} return x;};
-const seqs=longseq([...alphabet],5);
-console.assert(Math.max(...seqs.map(x=>x.length))>4,'long sequences (>4) should exist');
+console.assert(Math.max(...longseq(['c','d'],5).map(x=>x.length),4),'long sequences (>4) should exist for verbs');

@@ -36,7 +36,7 @@ const Parser=(logging=0)=>{
     let xs={
       ascii:'',
       bracket:'[{()}]',
-      edit:'JoOpPrxX~',
+      edit:'DJoOpPrxX~',
       insert:'aAiI',
       leader:' ',
       modifier:'ai',
@@ -59,7 +59,7 @@ const Parser=(logging=0)=>{
     [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
     const less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
-    xs.ascii_partial=less(xs.ascii,(xs.bracket+'t<>')).join('');
+    xs.ascii_lite=less(xs.ascii,(xs.bracket+'t<>')).join('');
     let t={}; for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
     ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase()+x.slice(1)]=[x];});
     ['Down','Left','Right','Up'].map(x=>t['Arrow'+x]=['arrow']);
@@ -69,9 +69,11 @@ const Parser=(logging=0)=>{
   })();
 
   const leaf=1, branch=2, nomatch=3;
+
   const lt=()=>({tab:leaf, ascii:leaf});/* TODO -- Leader Tree */
+
   const st=(n=0)=>{/* State Tree */
-    const bt=({ascii_partial:leaf, bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
+    const bt=({ascii_lite:leaf, bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
           re=({enter:leaf, get ascii(){return this;}});
     return((x)=>{
       if(n===1){/* replace mult_0 with mult_N */
@@ -121,15 +123,9 @@ const Parser=(logging=0)=>{
 
   const sequence_or_null=(n)=>{
     const ns=n.map(x=>x.key).join(''), dts=n.map(x=>x.ts), snds=dts.slice(1),
-          fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x),
-          longest_common_prefix=(a,b)=>{
-            let r=[];for(let i in b){
-              if(a[i]!==b[i]){break;}r.push(a[i]);
-            } return r.join('');
-          };
+          fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
     for(let {code:sr, dt:sd, type:st} of sequence){
-      let cp=longest_common_prefix(ns,sr);
-      if(cp===sr && fast_enough(sd,sr)){return ({type:st, len:0});}
+      if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:0});}
     } return null;
   };
 
