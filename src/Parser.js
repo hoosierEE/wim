@@ -6,7 +6,7 @@
  it could easily be converted to a requestAnimationFrame callback, or with
  more work, it could be sequestered into a Worker thread.
  */
-const Parser=(logging=0)=>{
+const Parser=()=>{
   const chord=[
     {code:'BracketLeft',type:'escape',mods:[2]},
     {code:'KeyG',type:'escape',mods:[2]},

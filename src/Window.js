@@ -11,10 +11,10 @@ const Window=()=>{/* Display the app itself. */
     context.font=(18*dpr)+'px monospace';
   };
 
-  const render=(text_document)=>{/* One canvasful of ...whatever. Mostly text, I'd wager. */
+  const render=(doc)=>{/* TextDocument -> Canvas () */
     context.clearRect(0,0,canvas.width,canvas.height);
     let pos=20;
-    for(let i in text_document.lines){context.fillText(text_document.get_line(i),20,pos+=30);}
+    for(let i in doc.lines){context.fillText(doc.nth_line(i),20,pos+=30);}
   };
 
   init();
