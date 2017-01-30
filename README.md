@@ -34,5 +34,3 @@ Everything below here is a desired (and maybe implemented) feature.
   Still not commited to a particular rendering backend.
   DOM has a lot of already-made toys.
   On the other hand, canvas is closer to WebGL, which could be interesting.
-  
-

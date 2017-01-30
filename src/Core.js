@@ -1,5 +1,16 @@
-const rxmatches=(a,b)=>{let r=[],m;while((m=a.exec(b))!==null){r.push(m.index);}return r;};
+/* TODO -- Core currently does ONLY: print some lines to canvas.
 
+ The primary goals of Core is to accept messages from input devices,
+ and send messages to output devices.
+
+ Current implementation supports:
+ - 1 input device (keyboard)
+ - 1 output device (fullscreen canvas)
+
+ But eventually it should be the interface which arbitrates messages among ALL plugins,
+ including things like syntax highlighting, spell checking, indentation, etc.
+ */
+const rxmatches=(a,b)=>{let r=[],m;while((m=a.exec(b))!==null){r.push(m.index);}return r;};
 const Core=()=>{/* String (looks like an array of lines). */
   const my={str:'',lines:[]};
 
