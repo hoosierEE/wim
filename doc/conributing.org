@@ -1,2 +1,0 @@
-* Contributing to Wim
-If you have a sepcific featuer request or bugfix, send a PR.  If you want to become a collaborator, send me a message.

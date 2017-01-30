@@ -1,8 +1,8 @@
 {
-    "app": {"background": {"scripts": ["src/startup.js"]}},
-    "manifest_version": 2,
-    "name": "wim",
-    "version": "0.1",
-    "description": "a modal text editor",
-    "icons": { "16": "images/wim-16.png", "128": "images/wim-128.png" }
+    "app":{"background":{"scripts":["src/chromeapp.js"]}},
+    "manifest_version":2,
+    "name":"wim",
+    "version":"0.2",
+    "description":"a modal text editor",
+    "icons":{"16":"images/wim-16.png","128":"images/wim-128.png"}
 }
