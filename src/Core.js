@@ -39,3 +39,4 @@ const Core=()=>{/* String (looks like an array of lines). */
     del,nth_line,ins,put,save
   });
 };
+export {Core};

@@ -1,3 +1,7 @@
+import {Parser} from './Parser.js';
+import {Core} from './Core.js';
+import {Display} from './Display.js';
+
 const inp=Parser(),  /* input          */
       core=Core(),   /* think about it */
       out=Display(); /* output         */

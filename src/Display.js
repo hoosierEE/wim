@@ -21,3 +21,4 @@ const Display=()=>{/* Display the app itself. */
 
   return ({reset,render});
 };
+export {Display};

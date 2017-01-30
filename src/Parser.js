@@ -185,3 +185,4 @@ const Parser=()=>{
   };
   return {key_handler};
 };
+export {Parser};
