@@ -1,4 +1,3 @@
-'use strict';
 /* Parser.js -- transforms keyboard input into tokens.
  + key_handler :: KeyboardEvent -> State|Object
 

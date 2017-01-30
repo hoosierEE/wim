@@ -1,16 +1,13 @@
-/* Modules */
-const core=Core(),
-      win=Window(),
-      doc=Doc(),
-      par=Parser();
+const inp=Parser(),  /* input          */
+      core=Core(),   /* think about it */
+      out=Display(); /* output         */
 
-doc.put("This is line 0.\n    This is line 1 (it's indented).\nThis is line 2.");
-doc.save();
+core.put("This is line 0.\n    This is line 1 (it's indented).\nThis is line 2.");
+core.save();
 
-/* Events */
-const rsz=()=>{win.init(); win.render(doc);},
-      key_dn=(e)=>console.log(JSON.stringify(par.key_handler(e,0))),
-      key_up=(e)=>par.key_handler(e,1);
+const rsz=()=>{out.reset(); out.render(core);},
+      key_dn=(e)=>console.log(JSON.stringify(inp.key_handler(e,0))),
+      key_up=(e)=>inp.key_handler(e,1);
 window.addEventListener('keydown',key_dn);
 window.addEventListener('keyup',key_up);
 window.addEventListener('load',rsz);
