@@ -1,15 +1,9 @@
-/* TODO -- Core currently does ONLY: print some lines to canvas.
-
- The primary goals of Core is to accept messages from input devices,
- and send messages to output devices.
-
- Current implementation supports:
- 1 input device (keyboard)
- 1 output device (fullscreen canvas)
+/* Core.js has 2 main responsibilities:
+ 1. accept messages from input devices TODO
+ 2. and send messages to output devices (supports canvas only)
 
  But eventually it should be the interface which arbitrates messages among ALL plugins,
- including things like syntax highlighting, spell checking, indentation, etc.
- */
+ including things like syntax highlighting, spell checking, indentation, etc. */
 const rxmatches=(a,b)=>{let r=[],m;while((m=a.exec(b))!==null){r.push(m.index);}return r;};
 const Core=()=>{/* String (looks like an array of lines). */
   const my={str:'',idxs:[]};
@@ -28,16 +22,18 @@ const Core=()=>{/* String (looks like an array of lines). */
     else{return nth_line(Math.max(0,1+len+a));}/* negative from end, without wrapping */
   };
 
+  /* (a+i.b) { cutLF lines */
+  const get_lines=(a,b)=>all_lines().slice(a,b);
+
   // TODO all of these
-  const get_lines=(a,b)=>{};/* (a+i.b) { cutLF lines */
   const ins=(a,b)=>{};/* insert string (a) at position(s) (b) */
   const del=(a,b)=>{};/* delete #(a) chars at position(s) (b) */
   const save=(a)=>{};/* Send a save/commit request to Core/backend. */
 
   return ({
-    get raw(){return my.str;},
-    get line_starts(){return lines_starts();},
-    get all_lines(){return all_lines();},
-    del,nth_line,ins,put,save
+    get linewise(){return all_lines();},
+    get_lines,
+    nth_line,
+    put
   });
 };

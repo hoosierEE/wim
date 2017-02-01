@@ -8,16 +8,18 @@ const Display=()=>{/* Display the app itself. */
     [canvas.style.height,canvas.style.width]=[h,w].map(x=>x+'px');
 
     /* Set fonts AFTER canvas mod! */
-    context.font=(18*dpr)+'px monospace';
+    //context.font=(18*dpr)+'px monospace';
+    context.font=(18*dpr)+'px serif';
   };
 
-  const render=(doc)=>{/* TextDocument -> Canvas () */
+  const render=(doc)=>{/* Text -> Canvas () */
     context.clearRect(0,0,canvas.width,canvas.height);
-    let pos=20;
-    for(let i in doc.all_lines){context.fillText(doc.nth_line(i),20,pos+=30);}
+    let border=20,
+        delta_y=40,
+        top=border+delta_y;
+    doc.linewise.forEach((x,i)=>context.fillText(x, border, top+i*delta_y));
   };
 
   reset();
-
   return ({reset,render});
 };
