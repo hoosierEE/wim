@@ -17,7 +17,7 @@ const Display=()=>{/* Display the app itself. */
     let border=20,
         delta_y=40,
         top=border+delta_y;
-    doc.linewise.forEach((x,i)=>context.fillText(x, border, top+i*delta_y));
+    doc.get_lines(11,10).forEach((x,i)=>context.fillText(x, border, top+i*delta_y));
   };
 
   reset();
