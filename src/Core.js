@@ -14,9 +14,11 @@ const rxmatches=(a,b)=>{let r=[],m;while((m=a.exec(b))!==null){r.push(m.index);}
 const Core=()=>{/* String (looks like an array of lines). */
   const my={str:'',lines:[]};
 
-  const lines=()=>{my.lines=rxmatches(/\n/g,my.str); return [0,...my.lines];};/* Overwrite & prefix with 0. */
+  // TODO rxall ?
+  const lines=()=>{my.lines=rxmatches(/\n/g,my.str); return [0,...my.lines];};/* Overwrite; prepend 0. */
   const put=(a)=>{my.str=a; lines();};
 
+  // TODO separate helper fn for 0<=a<=len, can be used elsewhere (get_lines)
   const nth_line=(a)=>{/* Int -> String */
     a=a|0; const lns=my.lines, len=lns.length;
     if(0<a && a<len){return my.str.slice(lns[a-1]+1   ,lns[a]);}/* middle */
@@ -25,8 +27,8 @@ const Core=()=>{/* String (looks like an array of lines). */
     else{return nth_line(Math.max(0,1+len+a));}/* negative from end, without wrapping */
   };
 
-  const get_lines=(a,b)=>{/* Lines (a,b] */
-
+  const get_lines=(a,b)=>{
+    // (a+i.b) { cutLF lines
   };
 
   const ins=(a,b)=>{};/* insert string (a) at position(s) (b) */
