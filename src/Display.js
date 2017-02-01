@@ -14,7 +14,7 @@ const Display=()=>{/* Display the app itself. */
   const render=(doc)=>{/* TextDocument -> Canvas () */
     context.clearRect(0,0,canvas.width,canvas.height);
     let pos=20;
-    for(let i in doc.lines){context.fillText(doc.nth_line(i),20,pos+=30);}
+    for(let i in doc.all_lines){context.fillText(doc.nth_line(i),20,pos+=30);}
   };
 
   reset();
