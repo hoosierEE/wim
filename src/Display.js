@@ -12,6 +12,8 @@ const Display=()=>{/* Display the app itself. */
     context.font=(18*dpr)+'px serif';
   };
 
+  /* Display should figure out how tall a line of text is, and how lines equal 1 screenful.
+   Then it can ask Doc for just that many and render only those lines. */
   const render=(doc)=>{/* Text -> Canvas () */
     context.clearRect(0,0,canvas.width,canvas.height);
     let border=20,
