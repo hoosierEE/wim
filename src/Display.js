@@ -12,14 +12,19 @@ const Display=()=>{/* Display the app itself. */
     context.font=(18*dpr)+'px serif';
   };
 
-  /* Display should figure out how tall a line of text is, and how lines equal 1 screenful.
-   Then it can ask Doc for just that many and render only those lines. */
+  /* TODO
+   Display should figure out how tall one line of text is (currently hardcoded in delta_y),
+   and how tall the window is, and thus request from Doc enough lines to fill the screen.
+
+   Also, if we assume that the cursor is always visible, then Doc can figure out where
+   the starting line is, and only needs to know _how many_ lines it should return. */
+
   const render=(doc)=>{/* Text -> Canvas () */
     context.clearRect(0,0,canvas.width,canvas.height);
     let border=20,
         delta_y=40,
         top=border+delta_y;
-    doc.get_lines(11,10).forEach((x,i)=>context.fillText(x, border, top+i*delta_y));
+    doc.lines(0,15).forEach((x,i)=>context.fillText(x, border, top+i*delta_y));
   };
 
   reset();

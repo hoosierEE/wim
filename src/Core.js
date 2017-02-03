@@ -6,6 +6,7 @@
  including things like syntax highlighting, spell checking, indentation, etc. */
 const Core=()=>{/* String (looks like an array of lines). */
   const my={str:'', starts:[], lines:[]};
+  const pt={line:0, col:0}; /* Cursor position */
 
   const all_lines=()=>my.str.match(/^.*/mg);
   const put=(a)=>{my.str=a;};
@@ -18,7 +19,7 @@ const Core=()=>{/* String (looks like an array of lines). */
   };
 
   /* (a+i.b) { cutLF lines */
-  const get_lines=(a,b)=>{a=idx(a), b=b+a; return all_lines().slice(a,b);};
+  const lines=(a,b)=>{a=idx(a), b=b+a; return all_lines().slice(a,b);};
 
   // TODO all of these
   const ins=(a,b)=>{};/* insert string (a) at position(s) (b) */
@@ -26,9 +27,7 @@ const Core=()=>{/* String (looks like an array of lines). */
   const save=(a)=>{};/* Send a save/commit request to Core/backend. */
 
   return ({
-    all_lines,
-    get_lines,
-    idx,
+    lines,
     put
   });
 };
