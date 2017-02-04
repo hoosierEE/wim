@@ -2,12 +2,13 @@
  1. accept messages from input devices TODO
  2. and send messages to output devices (supports canvas only)
 
- But eventually it should be the interface which arbitrates messages among ALL plugins,
- including things like syntax highlighting, spell checking, indentation, etc. */
+ Could eventually interface between any/all plugins, including things
+ like syntax highlighting, spell checking, indentation, etc. */
 const Core=()=>{/* String (looks like an array of lines). */
-  const my={str:'', starts:[], lines:[]};
+
   const pt={line:0, col:0}; /* Cursor position */
 
+  const my={str:'', starts:[], lines:[]};
   const all_lines=()=>my.str.match(/^.*/mg);
   const put=(a)=>{my.str=a;};
 
@@ -26,8 +27,5 @@ const Core=()=>{/* String (looks like an array of lines). */
   const del=(a,b)=>{};/* delete #(a) chars at position(s) (b) */
   const save=(a)=>{};/* Send a save/commit request to Core/backend. */
 
-  return ({
-    lines,
-    put
-  });
+  return ({lines, put});
 };
