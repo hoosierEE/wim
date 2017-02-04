@@ -83,10 +83,10 @@ core.put([
   "Report bugs to <bug-gnu-utils@gnu.org>."
 ].join('\n'));
 
-const rsz=()=>{out.reset(); out.render(core);},
+const rsz=()=>{out.resize(); out.render(core);},
       key_dn=(e)=>console.log(JSON.stringify(inp.key_handler(e,0))),
       key_up=(e)=>inp.key_handler(e,1);
 window.addEventListener('keydown',key_dn);
 window.addEventListener('keyup',key_up);
-window.addEventListener('load',rsz);
-window.addEventListener('resize',rsz);
+window.addEventListener('load',()=>window.requestAnimationFrame(rsz));
+window.addEventListener('resize',()=>window.requestAnimationFrame(rsz));

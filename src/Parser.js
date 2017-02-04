@@ -20,15 +20,15 @@ const Parser=()=>{
     {code:'KeyV',type:'visual',mods:[2]}
   ];
 
-  const sequence=[/* NOTE -- these can't overlap other actions (including atoms), use sparingly. */
+  const sequence=[/* NOTE prefixes of other commands must register here AND in st */
     {code:'fd',type:'escape',dt:200},
     {code:'cc',type:'phrase'},
     {code:'dd',type:'phrase'},
     {code:'yy',type:'phrase'},
     {code:'cs',type:'csurround'},
     {code:'ds',type:'dsurround'},
-    {code:'ys',type:'ysurround'},/* NOTE -- this is a prefix of ysurround_line, AND is in the behavior tree. */
-    {code:'yss',type:'ysurround_line'}
+    {code:'ys',type:'ysurround'},/* ...for example, this... */
+    {code:'yss',type:'ysurround_line'}/* ...is a prefix of this. */
   ].map(x=>{x.code=[...x.code].reverse().join('');return x;});
 
   const atom=(()=>{/* {Char:[Type]} */
@@ -69,12 +69,13 @@ const Parser=()=>{
 
   const leaf=1, branch=2, nomatch=3;
 
-  const lt=()=>({tab:leaf, ascii:leaf});/* TODO -- Leader Tree */
+  /* TODO: keep track of different modes. */
+  const lt=()=>({tab:leaf, ascii:leaf});/* TODO Leader Tree */
 
   const st=(n=0)=>{/* State Tree */
     const bt=({ascii_lite:leaf, bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
           re=({enter:leaf, get ascii(){return this;}});
-    return((x)=>{
+    return ((x)=>{
       if(n===1){/* replace mult_0 with mult_N */
         delete x.mult_0; Object.defineProperty(x,'mult_N',{get:function(){return this;}});
       } return x;
@@ -131,10 +132,10 @@ const Parser=()=>{
   const atom_or_null=(n)=>{
     const types=atom[n[0].key]; if(!types){return null;}
     if(types.join()==='escape'){return ({type:'escape', len:0});}
-    const m=n[0].mods,
+    const m=!n[0].mods&7,/* mods==(0 or 8) ...Bitwise, for no good reason. */
           ns=Object.getOwnPropertyNames(stt);/* hmm... */
     for(let i in types){
-      if((0===m || 8===m) && ns.includes(types[i])){return ({type:types[i], len:0});}
+      if(m && ns.includes(types[i])){return ({type:types[i], len:0});}
     } return null;
   };
 
@@ -157,17 +158,16 @@ const Parser=()=>{
   /* update -- given a new KeyboardEvent, what changes to the internal state? */
   const update=(input)=>{
     inq.unshift(input);
-    let t=null; for(let fn of fns){
-      if((t=fn(inq))){
+    for(let fn of fns){
+      let t; if((t=fn(inq))){
         inq=inq.slice(t.len);
         if('escape'===t.type){return R('quit',1);}
         if(t.ignore){return R('ignore',0);}
-        vals.keys.push(input.key);
-        vals.mods.push(input.mods);
+        vals.keys.push(input.key); vals.mods.push(input.mods);
         t=climb_tree(t.type);
         if(nomatch===t){return R('error',1);}
-        if(leaf===t){return R('done',3);}
         if(branch===t){return R('continue',2);}
+        if(leaf===t){return R('done',3);}
       }
     } return R('error',1);
   };
