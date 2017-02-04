@@ -132,7 +132,7 @@ const Parser=()=>{
   const atom_or_null=(n)=>{
     const types=atom[n[0].key]; if(!types){return null;}
     if(types.join()==='escape'){return ({type:'escape', len:0});}
-    const m=!n[0].mods&7,/* mods==(0 or 8) ...Bitwise, for no good reason. */
+    const m=!n[0].mods&7,/* mods==(0 or 8) Bitwise for no good reason. */
           ns=Object.getOwnPropertyNames(stt);/* hmm... */
     for(let i in types){
       if(m && ns.includes(types[i])){return ({type:types[i], len:0});}

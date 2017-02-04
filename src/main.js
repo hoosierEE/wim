@@ -88,5 +88,5 @@ const rsz=()=>{out.resize(); out.render(core);},
       key_up=(e)=>inp.key_handler(e,1);
 window.addEventListener('keydown',key_dn);
 window.addEventListener('keyup',key_up);
-window.addEventListener('load',()=>window.requestAnimationFrame(rsz));
-window.addEventListener('resize',()=>window.requestAnimationFrame(rsz));
+window.addEventListener('load',rsz);
+window.addEventListener('resize',rsz);
