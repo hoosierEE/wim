@@ -40,7 +40,7 @@ const Display=()=>{/* Display the app itself. */
 
   const render=(doc)=>{/* Text -> Canvas () */
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    draw_cursor({x:border,y:border*1.8,w:800,h:200});
+    draw_cursor({x:border,y:border+0.25*delta_y,w:800,h:200});
     /* Doc should tell what line/column has the cursor, Display should turn those into x/y/w/h. */
     doc.lines(0,15).forEach((x,i)=>ctx.fillText(x, border, top+i*delta_y));
   };

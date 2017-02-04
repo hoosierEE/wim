@@ -178,7 +178,7 @@ const Parser=()=>{
     const evt={key:a.key, code:a.code, ts:a.timeStamp|0,
                mods:parseInt([a.shiftKey,a.metaKey,a.ctrlKey,a.altKey].map(Number).join(''),2),
                chord:Array.from(KC)},
-          ad={'KeyI':[10,5],'KeyR':[2,4]}[evt.code];/* allow default */
+          ad={'Minus':[2,4],'Equal':[2,4],'KeyI':[10,5],'KeyR':[2,4]}[evt.code];/* allow default */
     if(ad && ad[navigator.platform==='MacIntel'|0]===evt.mods){return null;}
     a.preventDefault();
     return update(evt);

@@ -20,7 +20,7 @@ const Core=()=>{/* String (looks like an array of lines). */
   };
 
   /* (a+i.b) { cutLF lines */
-  const lines=(a,b)=>{a=idx(a), b=b+a; return all_lines().slice(a,b);};
+  const lines=(a,b)=>{const c=idx(a); return all_lines().slice(c,Math.max(c,c+b|0));};
 
   // TODO all of these
   const ins=(a,b)=>{};/* insert string (a) at position(s) (b) */
