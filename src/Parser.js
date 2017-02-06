@@ -1,7 +1,7 @@
 /* Parser.js -- transforms keyboard input into tokens.
  + key_handler :: KeyboardEvent -> State|Object
 
- key_handler calls update synchronously, but if this someday hurts performance
+ |key_handler| calls |update| synchronously, but if this someday hurts performance
  it could easily be converted to a requestAnimationFrame callback, or with
  more work, it could be sequestered into a Worker thread.
  */
@@ -13,10 +13,9 @@ const Parser=()=>{
     {code:'KeyU',type:'motion',mods:[2]},
     {code:'KeyF',type:'motion',mods:[2]},
     {code:'KeyB',type:'motion',mods:[2]},
-    {code:'KeyH',type:'i_motion',mods:[2]},
-    {code:'KeyJ',type:'i_motion',mods:[2]},
-    {code:'KeyK',type:'i_motion',mods:[2]},
-    {code:'KeyL',type:'i_motion',mods:[2]},
+    {code:'KeyH',type:'i_edit',mods:[2]},/* (insert mode) backspace */
+    {code:'KeyJ',type:'i_edit',mods:[2]},/* (insert mode) carriage return */
+    {code:'KeyK',type:'i_edit',mods:[2]},/* (insert mode) kill-to-eol */
     {code:'KeyV',type:'visual',mods:[2]}
   ];
 

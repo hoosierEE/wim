@@ -84,7 +84,11 @@ core.put([
 ].join('\n'));
 
 const rsz=()=>{out.resize(); out.render(core);},
-      key_dn=(e)=>console.log(JSON.stringify(inp.key_handler(e,0))),
+      key_dn=(e)=>{
+        const evt=inp.key_handler(e,0);
+        if(core.hears(evt)){out.render(core);}
+        console.log(JSON.stringify(evt));
+      },
       key_up=(e)=>inp.key_handler(e,1);
 window.addEventListener('keydown',key_dn);
 window.addEventListener('keyup',key_up);
