@@ -1,6 +1,7 @@
-const inp=Parser(),  /* input          */
-      core=Core(),   /* think about it */
-      out=Display(); /* output         */
+const
+inp=Parser(),  /* input          */
+core=Core(),   /* think about it */
+out=Display(); /* output         */
 
 core.put([
   "Usage: diff [OPTION]... FILES",
@@ -83,13 +84,14 @@ core.put([
   "Report bugs to <bug-gnu-utils@gnu.org>."
 ].join('\n'));
 
-const rsz=()=>{out.resize(); out.render(core);},
-      key_dn=(e)=>{
-        const evt=inp.key_handler(e,0);
-        if(core.hears(evt)){out.render(core);}
-        console.log(JSON.stringify(evt));
-      },
-      key_up=(e)=>inp.key_handler(e,1);
+const
+rsz=()=>{out.update(); out.render(core);},
+key_dn=(e)=>{
+  const evt=inp.key_handler(e,0);
+  if(core.hears(evt)){out.render(core);}
+  console.log(JSON.stringify(evt));
+},
+key_up=(e)=>inp.key_handler(e,1);
 window.addEventListener('keydown',key_dn);
 window.addEventListener('keyup',key_up);
 window.addEventListener('load',rsz);
