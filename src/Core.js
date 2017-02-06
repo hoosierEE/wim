@@ -23,11 +23,11 @@ const Core=()=>{/* String (looks like an array of lines). */
   /* Listen to messages. */
   const hears=(a)=>{
     let status=0;
-    if(a && 'done'===a.status){
+    if(a && 'done'===a.status){/* Seems legit. */
       let n=a.keys.length-1, last=[a.keys[n], a.mods[n], a.part[n]];
-      if(last[2]==='motion'){
+      if(last[2]==='motion'){/* Um, where are you going with this? */
         status=1;
-        switch(last[0]){
+        switch(last[0]){/* nope nope nope */
         case'j':pt.line+=1;break;
         case'k':pt.line-=1;break;
         case'h':pt.col-=1;break;
