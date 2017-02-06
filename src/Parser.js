@@ -6,7 +6,8 @@
  more work, it could be sequestered into a Worker thread.
  */
 const Parser=()=>{
-  const chord=[
+  const
+  chord=[
     {code:'BracketLeft',type:'escape',mods:[2]},
     {code:'KeyG',type:'escape',mods:[2]},
     {code:'KeyD',type:'motion',mods:[2]},
@@ -17,9 +18,9 @@ const Parser=()=>{
     {code:'KeyJ',type:'i_edit',mods:[2]},/* (insert mode) carriage return */
     {code:'KeyK',type:'i_edit',mods:[2]},/* (insert mode) kill-to-eol */
     {code:'KeyV',type:'visual',mods:[2]}
-  ];
+  ],
 
-  const sequence=[/* NOTE prefixes of other commands must register here AND in st */
+  sequence=[/* NOTE prefixes of other commands must register here AND in st */
     {code:'fd',type:'escape',dt:200},
     {code:'cc',type:'phrase'},
     {code:'dd',type:'phrase'},
@@ -28,9 +29,9 @@ const Parser=()=>{
     {code:'ds',type:'dsurround'},
     {code:'ys',type:'ysurround'},/* ...for example, this... */
     {code:'yss',type:'ysurround_line'}/* ...is a prefix of this. */
-  ].map(x=>{x.code=[...x.code].reverse().join('');return x;});
+  ].map(x=>{x.code=[...x.code].reverse().join('');return x;}),
 
-  const atom=(()=>{/* {Char:[Type]} */
+  atom=(()=>{/* {Char:[Type]} */
     let xs={
       ascii:'',
       bracket:'[{()}]',
@@ -64,14 +65,14 @@ const Parser=()=>{
     t.PageDown=t.PageUp=t.Home=t.End=['motion'];
     t.Delete=t.Backspace=['edit'];
     return t;
-  })();
+  })(),
 
-  const leaf=1, branch=2, nomatch=3;
+  leaf=1, branch=2, nomatch=3,
 
   /* TODO: keep track of different modes. */
-  const lt=()=>({tab:leaf, ascii:leaf});/* TODO Leader Tree */
+  lt=()=>({tab:leaf, ascii:leaf}),/* TODO Leader Tree */
 
-  const st=(n=0)=>{/* State Tree */
+  st=(n=0)=>{/* State Tree */
     const bt=({ascii_lite:leaf, bracket:leaf, tag_start:{get tag(){return this;}, tag_end:leaf}}),
           re=({enter:leaf, get ascii(){return this;}});
     return ((x)=>{
@@ -109,26 +110,26 @@ const Parser=()=>{
           ysurround_line:bt},
         text_object:leaf,
         seek:{ascii:leaf}}});
-  };
+  },
 
-  const chord_or_null=(n)=>{
+  chord_or_null=(n)=>{
     const m=n[0].mods; if(!m){return null;}
     const kc=n[0].chord, mods=['Alt','Control','Meta','Shift'];
     if(kc.every(x=>mods.reduce((a,b)=>a|x.startsWith(b)|0,0))){return ({ignore:1});}
     for(let {code:cc, mods:cm, type:ct} of chord){
       if(kc.includes(cc) && cm.some(y=>y===m)){return ({type:ct, len:kc.length});}
     } return null;
-  };
+  },
 
-  const sequence_or_null=(n)=>{
+  sequence_or_null=(n)=>{
     const ns=n.map(x=>x.key).join(''), dts=n.map(x=>x.ts), snds=dts.slice(1),
           fast_enough=(a,b)=>!a || dts.slice(0,b.length-1).map((x,i)=>x-snds[i]).every(x=>a>x);
     for(let {code:sr, dt:sd, type:st} of sequence){
       if(ns.startsWith(sr) && fast_enough(sd,sr)){return ({type:st, len:0});}
     } return null;
-  };
+  },
 
-  const atom_or_null=(n)=>{
+  atom_or_null=(n)=>{
     const types=atom[n[0].key]; if(!types){return null;}
     if(types.join()==='escape'){return ({type:'escape', len:0});}
     const m=!n[0].mods&7,/* mods==(0 or 8) Bitwise for no good reason. */
@@ -136,26 +137,27 @@ const Parser=()=>{
     for(let i in types){
       if(m && ns.includes(types[i])){return ({type:types[i], len:0});}
     } return null;
-  };
+  },
 
   /* Input => (leaf|branch|nomatch) */
-  const climb_tree=(a)=>{
+  climb_tree=(a)=>{
     let r=stt[a]; if(r){
       vals.part.push(a);
       if(leaf===r){return leaf;}
       stt=r; return branch;
     } return nomatch;
-  };
+  },
 
-  const fns=[chord_or_null,sequence_or_null,atom_or_null],
-        reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
-        R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
+  fns=[chord_or_null,sequence_or_null,atom_or_null],
+  reset=()=>[st(),{keys:[],mods:[],part:[]},[]],
+  R=(a,b)=>{let r={};if(2&b){r=vals;}if(1&b){[stt,vals,inq]=reset();}r.status=a;return r;};
 
   /* State Variables */
   let [stt,vals,inq]=reset();
 
   /* update -- given a new KeyboardEvent, what changes to the internal state? */
-  const update=(input)=>{
+  const
+  update=(input)=>{
     inq.unshift(input);
     for(let fn of fns){
       let t; if((t=fn(inq))){
@@ -169,10 +171,9 @@ const Parser=()=>{
         if(leaf===t){return R('done',3);}
       }
     } return R('error',1);
-  };
-
-  const KC=new Set();
-  const key_handler=(a,b)=>{
+  },
+  KC=new Set(),
+  key_handler=(a,b)=>{
     KC[b?'delete':'add'](a.code); if(b){return null;}
     const evt={key:a.key, code:a.code, ts:a.timeStamp|0,
                mods:parseInt([a.shiftKey,a.metaKey,a.ctrlKey,a.altKey].map(Number).join(''),2),
