@@ -3,6 +3,7 @@ const Core=()=>{/* String (looks like an array of lines). */
   const
   my={str:'', starts:[], lines:[]},/* Document (string) */
   cursor={line:0, col:0, maxcol:0, height:1.0, scroll:false, color:'normal'},
+  document={line:0},
 
   /* Document */
   all_lines=()=>my.str.match(/^.*/mg),
@@ -44,5 +45,5 @@ const Core=()=>{/* String (looks like an array of lines). */
     } return heard;
   };
 
-  return ({lines, put, hears, cursor});
+  return ({lines, put, hears, cursor, document});
 };
