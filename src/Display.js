@@ -28,11 +28,12 @@ const Display=()=>{
       else if(core.cursor.line<TOP+cfg.pad){TOP=Math.max(0,core.cursor.line-cfg.pad);}
     }
 
-    const lines=core.lines(TOP,LS),
-          cl=lines[core.cursor.line-TOP],
-          cxl=cl.slice(0,core.cursor.col),
-          cxr=cl.slice(0, core.cursor.col+1),
-          [left,right]=[cxl,cxr].map(x=>ctx.measureText(x).width);
+    const
+    lines=core.lines(TOP,LS),
+    cl=lines[core.cursor.line-TOP],
+    cxl=cl.slice(0,core.cursor.col),
+    cxr=cl.slice(0, core.cursor.col+1),
+    [left,right]=[cxl,cxr].map(x=>ctx.measureText(x).width);
 
     draw_cursor({
       x: cfg.border+left,
