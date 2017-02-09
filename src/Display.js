@@ -6,6 +6,7 @@ const Display=()=>{
   cfg={border:20,font:16,pad:5},/* Static (for now). */
 
   draw_cursor=({x,y,w,h},color)=>{
+    console.log(w);
     ctx.save();
     ctx.fillStyle=color;
     ctx.fillRect(x,y,w,h);
@@ -38,7 +39,7 @@ const Display=()=>{
     draw_cursor({
       x: cfg.border+left,
       y: cfg.border+LH*(core.cursor.line-TOP+0.25),
-      w: right-left,
+      w: Math.max(4,right-left),
       h: LH
     },'orange');
 
