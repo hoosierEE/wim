@@ -27,7 +27,7 @@ const Core=()=>{/* String (looks like an array of lines). */
 
   /* Listener */
   hears=(parsed)=>{
-    /* TODO plugins.dispatch(parsed) replaces all of this */
+    /* TODO Dispatch(parsed) replaces all of this */
     let heard=false;
     if(parsed && 'done'===parsed.status){
       let n=parsed.keys.length-1, last=[parsed.keys[n], parsed.mods[n], parsed.part[n]];
