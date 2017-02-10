@@ -34,10 +34,10 @@ const Core=()=>{/* String (looks like an array of lines). */
       if(last[2]==='motion'){
         heard=true;
         switch(last[0]){
-        case'j':cursor.line=Math.min(all_lines().length, cursor.line+1);break;
+        case'h':cursor.col=Math.max(0,cursor.col-1);break;
+        case'j':cursor.line=Math.min(all_lines().length-1, cursor.line+1);break;
         case'k':cursor.line=Math.max(0,cursor.line-1);break;
-        case'h':cursor.col-=1;break;
-        case'l':cursor.col+=1;break;
+        case'l':cursor.col=Math.min(all_lines()[cursor.line].length-1, cursor.col+1);break;
         }
       }
     } return heard;
