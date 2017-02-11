@@ -1,7 +1,6 @@
-const
-inp=Parser(),  /* input          */
-core=Core(),   /* think about it */
-out=Display(); /* output         */
+const inp=Parser(),
+      core=Core(),
+      out=Display();
 rsz=()=>{out.update(); out.render(core);},
 key_dn=(e)=>{
   const evt=inp.key_handler(e,0);

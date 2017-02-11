@@ -113,7 +113,7 @@ const Parser=()=>{
   },
 
   chord_or_null=(n)=>{
-    const m=n[0].mods; if(!m){return null;}
+    const m=n[0].mods; if(!m || 8===m){console.log(m);return null;}
     const kc=n[0].chord, mods=['Alt','Control','Meta','Shift'];
     if(kc.every(x=>mods.reduce((a,b)=>a|x.startsWith(b)|0,0))){return ({ignore:1});}
     for(let {code:cc, mods:cm, type:ct} of chord){
@@ -132,10 +132,9 @@ const Parser=()=>{
   atom_or_null=(n)=>{
     const types=atom[n[0].key]; if(!types){return null;}
     if(types.join()==='escape'){return ({type:'escape', len:0});}
-    const m=!n[0].mods&7,/* mods==(0 or 8) Bitwise for no good reason. */
-          ns=Object.getOwnPropertyNames(stt);/* hmm... */
+    const ns=Object.getOwnPropertyNames(stt);/* hmm... */
     for(let i in types){
-      if(m && ns.includes(types[i])){return ({type:types[i], len:0});}
+      if(ns.includes(types[i])){return ({type:types[i], len:0});}
     } return null;
   },
 

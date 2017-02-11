@@ -1,47 +1,51 @@
-/* Core.js: input | core | render */
-const Core=()=>{/* String (looks like an array of lines). */
+const Core=()=>{
   const
-  my={str:''},/* Document (string) */
-  cursor={line:0, col:0, maxcol:0, height:1.0, scroll:false, color:'normal'},
+  my={str:'', lines:[]},/* Document (string) */
+  cursor={y:0, x:0, maxcol:0, height:1.0, scroll:false, color:'normal'},
 
   /* Document */
-  all_lines=()=>my.str.match(/^.*/mg),
-  idx=(n)=>{/* number -> valid index into [lines] */
-    n|=0;const l=all_lines().length;
-    if(0<=n&&n<l){return n;}
-    if(n>=l){return l-1;}
-    return Math.max(0,n+l);
-  },
-  lines=(start,count)=>{/* (start+i.count) { cutLF lines */
-    const c=idx(start); return all_lines().slice(c,Math.max(c,c+count|0));
-  },
-  put=(a)=>{my.str=a;},
+
+  /* number -> valid index into [lines] */
+  idx=(n)=>{n|=0;const l=my.lines.length; if(0<=n&&n<l){return n;} if(n>=l){return l-1;} return Math.max(0,n+l);},
+
+  /* (start+i.count) { cutLF lines */
+  lines=(start,count)=>{const c=idx(start); return my.lines.slice(c,Math.max(c,c+count|0));},
+
+  put=(a)=>{my.str=a; my.lines=my.str.match(/^.*/mg);},
   ins=(a,b)=>{},/* TODO insert string (a) at position(s) (b) */
   del=(a,b)=>{},/* TODO delete #(a) chars at position(s) (b) */
-
-  /* Storage */
   save=(a)=>{},/* TODO Send a save/commit request to persistent storage. */
 
-  /* Plugins */
-  dispatch=(a)=>{},/* TODO given a ParsedEvent, possibly invoke some functions */
+  dispatch=(pe)=>{/* TODO decouple */
+    const
+    n=pe.keys.length-1,
+    fns={
+      motion:{
+        'h':[Math.max(0,cursor.x-1), cursor.y],
+        'j':[cursor.x, Math.min(my.lines.length-1,cursor.y+1)],
+        'k':[cursor.x, Math.max(0,cursor.y-1)],
+        'l':[Math.min(Math.max(0,my.lines[cursor.y].length-1),cursor.x+1), cursor.y]
+      },
+      text_object:{
+        '0':[0, cursor.y],
+        '$':[my.lines[cursor.y].length-1, cursor.y],
+        'w':[my.lines[cursor.y].slice(cursor.x).search(' ')+cursor.x+1, cursor.y]
+      }
+    };
+
+    let cf=fns[pe.part[n]];
+    if(cf){cf=cf[pe.keys[n]];} if(!cf){return false;}
+    console.log(cf);
+    [cursor.x, cursor.y]=cf; return true;
+  },
 
   /* Listener */
   hears=(parsed)=>{
-    /* TODO Dispatch(parsed) replaces all of this */
     let heard=false;
     if(parsed && 'done'===parsed.status){
-      let n=parsed.keys.length-1, last=[parsed.keys[n], parsed.mods[n], parsed.part[n]];
-      if(last[2]==='motion'){
-        heard=true;
-        switch(last[0]){
-        case'h':cursor.col=Math.max(0,cursor.col-1);break;
-        case'j':cursor.line=Math.min(all_lines().length-1, cursor.line+1);break;
-        case'k':cursor.line=Math.max(0,cursor.line-1);break;
-        case'l':cursor.col=Math.min(all_lines()[cursor.line].length-1, cursor.col+1);break;
-        }
-      }
+      heard=dispatch(parsed);
     } return heard;
   };
 
-  return ({lines, put, hears, cursor, all_lines});
+  return ({lines, put, hears, cursor});
 };
