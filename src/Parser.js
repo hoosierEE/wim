@@ -1,7 +1,7 @@
 /* Parser.js -- transforms keyboard input into tokens.
  + key_handler :: KeyboardEvent -> State|Object
 
- |key_handler| calls |update| synchronously, but if this someday hurts performance
+ key_handler calls update synchronously, but if this someday hurts performance
  it could easily be converted to a requestAnimationFrame callback, or with
  more work, it could be sequestered into a Worker thread.
  */
@@ -32,7 +32,8 @@ const Parser=()=>{
   ].map(x=>{x.code=[...x.code].reverse().join('');return x;}),
 
   atom=(()=>{/* {Char:[Type]} */
-    let xs={
+    const
+    xs={
       ascii:'',
       bracket:'[{()}]',
       edit:'DJoOpPrxX~',
@@ -53,13 +54,16 @@ const Parser=()=>{
       undo:'u',
       verb:'cdy`',
       visual:'vV'
-    };
-    const range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;};
+    },
+    range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;},
+    less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
+
     [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
-    const less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
+
     xs.ascii_lite=less(xs.ascii,(xs.bracket+'t<>')).join('');
-    let t={}; for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
+    let t={};
+    for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
     ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase()+x.slice(1)]=[x];});
     ['Down','Left','Right','Up'].map(x=>t['Arrow'+x]=['arrow']);
     t.PageDown=t.PageUp=t.Home=t.End=['motion'];
@@ -113,7 +117,7 @@ const Parser=()=>{
   },
 
   chord_or_null=(n)=>{
-    const m=n[0].mods; if(!m || 8===m){console.log(m);return null;}
+    const m=n[0].mods; if(!m || 8===m){return null;}
     const kc=n[0].chord, mods=['Alt','Control','Meta','Shift'];
     if(kc.every(x=>mods.reduce((a,b)=>a|x.startsWith(b)|0,0))){return ({ignore:1});}
     for(let {code:cc, mods:cm, type:ct} of chord){

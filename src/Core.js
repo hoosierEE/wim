@@ -33,9 +33,7 @@ const Core=()=>{
       }
     };
 
-    let cf=fns[pe.part[n]];
-    if(cf){cf=cf[pe.keys[n]];} if(!cf){return false;}
-    console.log(cf);
+    let cf=fns[pe.part[n]]; if(cf){cf=cf[pe.keys[n]];} if(!cf){return false;}
     [cursor.x, cursor.y]=cf; return true;
   },
 
