@@ -1,10 +1,5 @@
 /* Parser.js -- transforms keyboard input into tokens.
- + key_handler :: KeyboardEvent -> State|Object
-
- key_handler calls update synchronously, but if this someday hurts performance
- it could easily be converted to a requestAnimationFrame callback, or with
- more work, it could be sequestered into a Worker thread.
- */
+ + key_handler :: KeyboardEvent -> State|Object */
 const Parser=()=>{
   const
   chord=[
@@ -62,8 +57,9 @@ const Parser=()=>{
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
 
     xs.ascii_lite=less(xs.ascii,(xs.bracket+'t<>')).join('');
-    let t={};
-    for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
+
+    const t={}; for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
+
     ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase()+x.slice(1)]=[x];});
     ['Down','Left','Right','Up'].map(x=>t['Arrow'+x]=['arrow']);
     t.PageDown=t.PageUp=t.Home=t.End=['motion'];
