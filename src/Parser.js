@@ -52,14 +52,10 @@ const Parser=()=>{
     },
     range=(a,b,c=1)=>{let r=[];while(a<b){r.push(a);a+=c;}return r;},
     less=(a,b)=>{let r=[];for(let i in a){if(!b.includes(a[i])){r.push(a[i]);}}return r;};
-
     [['ascii',32,127,9],['tag',65,90],['tag',97,122]]
       .forEach(([o,x,y,...others])=>{xs[o]+=String.fromCharCode(...range(x,y+1).concat(others));});
-
     xs.ascii_lite=less(xs.ascii,(xs.bracket+'t<>')).join('');
-
     const t={}; for(let i in xs){[...xs[i]].forEach(y=>t[y]?t[y].push(i):t[y]=[i]);};
-
     ['enter','escape','tab'].forEach(x=>{t[x[0].toUpperCase()+x.slice(1)]=[x];});
     ['Down','Left','Right','Up'].map(x=>t['Arrow'+x]=['arrow']);
     t.PageDown=t.PageUp=t.Home=t.End=['motion'];

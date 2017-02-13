@@ -1,5 +1,6 @@
 const inp=Parser(),
-      core=Core(),
+      beh=Behavior(),
+      core=Core(beh),
       out=Display();
 rsz=()=>{out.update(); out.render(core);},
 key_dn=(e)=>{
