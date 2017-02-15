@@ -17,8 +17,10 @@ const Core=(behavior)=>{
   /* Listener */
   hears=(parsed)=>{
     let heard=false;
-    if(parsed && 'done'===parsed.status){
-      heard=behavior.dispatch(parsed, cur, doc.lines);
+    if(parsed){
+      heard=behavior.dispatch(parsed,cur,doc.lines);
+      if('continue'===parsed.status){heard=true; cur.height=0.5;}
+      else{cur.height=1.0;}
     } return heard;
   };
 

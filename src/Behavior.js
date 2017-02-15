@@ -1,10 +1,17 @@
 const Behavior=()=>{
   const
-  result={},
+  result={
+    visual:false,
+    selection_start:0,
+    selection_end:0,
+    selection_shape:['line','contiguous','rectangle'],
+    editing:false,
+    animating:false
+  },
   dispatch=(pe, cur, lines)=>{
     const
     n=pe.keys.length-1,
-    fns={
+    xy_delta={
       /* TODO common constraints: EOL, EOF, BOL, BOF
        could be built-in to certain actions... */
       motion:{
@@ -20,11 +27,14 @@ const Behavior=()=>{
       }
     };
 
-    let cf=fns[pe.part[n]];
-    if(cf){cf=cf[pe.keys[n]];}
-    if(!cf){return false;}
-    [cur.x, cur.y]=cf;
-    return true;
+    /* visual */
+
+    /* motion */
+    let xyd; (xyd=xy_delta[pe.part[n]]) && (xyd=xyd[pe.keys[n]]);
+    if(xyd){
+      [cur.x, cur.y]=xyd;
+      return true;
+    } return false;
   };
 
   return ({dispatch});
