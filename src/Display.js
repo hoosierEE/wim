@@ -5,10 +5,25 @@ const Display=()=>{
   ctx=can.getContext('2d'),
   cfg={border:10, font:16, pad:5, line_spacing:1},/* Static (for now). */
 
-  draw_cursor=({x,y,w,h},color)=>{
+  draw_cursors=(L,R)=>{
     ctx.save();
-    ctx.fillStyle=color;
-    ctx.fillRect(x,y,w,h);
+    const bw=0.5, cs=[
+      {
+        x: cfg.border+L-bw,
+        y: cfg.border+LH*(core.cur.y-TOP+cfg.line_spacing/4)-bw,
+        w: Math.max(4,R-L)+(2*bw),
+        h: core.cur.height*LH+(2*bw),
+        c:'hsl(0,100%,40%)'
+      },
+      {
+        x: cfg.border+L,
+        y: cfg.border+LH*(core.cur.y-TOP+cfg.line_spacing/4),
+        w: Math.max(4,R-L),
+        h: LH * core.cur.height,
+        c:'hsl(9,100%,80%)'
+      }
+    ];
+    for(let {x,y,w,h,c} of cs){ctx.fillStyle=c; ctx.fillRect(x,y,w,h);}
     ctx.restore();
   },
 
@@ -21,25 +36,9 @@ const Display=()=>{
     if(core.cur.y>TOP+VS){TOP=core.cur.y-VS;}
     else if(core.cur.y<TOP){TOP=core.cur.y;}
 
-    const lines=core.lines(TOP,LS);
-    const cl=lines[core.cur.y-TOP];/* cur's line */
-    const [L,R]=[0,1].map(x=>ctx.measureText(cl.slice(0,core.cur.x+x)).width);
-
-    draw_cursor({
-      x: cfg.border+L-1,
-      y: cfg.border+LH*(core.cur.y-TOP+cfg.line_spacing/4)-1,
-      w: Math.max(4,R-L)+2,
-      h: core.cur.height*LH+2
-    },'hsl(0,100%,40%)');
-
-
-    draw_cursor({
-      x: cfg.border+L,
-      y: cfg.border+LH*(core.cur.y-TOP+cfg.line_spacing/4),
-      w: Math.max(4,R-L),
-      h: LH * core.cur.height
-    },'hsl(9,100%,80%)');
-
+    const lines=core.lines(TOP,LS), cl=lines[core.cur.y-TOP],
+          [L,R]=[0,1].map(x=>ctx.measureText(cl.slice(0,core.cur.x+x)).width);
+    draw_cursors(L,R);
     draw_lines(lines);
   };
 

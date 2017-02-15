@@ -16,11 +16,11 @@ const Core=(behavior)=>{
 
   /* Listener */
   hears=(parsed)=>{
-    let heard=false;
-    if(parsed){
+    let heard=false, ps=parsed.status;
+    if(ps){
+      if('error'===ps || 'ignore'===ps){return false;}
       heard=behavior.dispatch(parsed,cur,doc.lines);
-      if('continue'===parsed.status){heard=true; cur.height=0.5;}
-      else{cur.height=1.0;}
+      heard|=1>(cur.height=('continue'===ps)?0.5:1);
     } return heard;
   };
 
